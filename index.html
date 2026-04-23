@@ -40,7 +40,7 @@
 
     body {
       margin: 0;
-      background: linear-gradient(180deg, #161616 0%, var(--bg) 100%);
+      background: var(--bg);
       color: var(--text);
       font-family: var(--ui-font);
     }
@@ -497,8 +497,13 @@
 
     .mini-exit {
       margin-left: auto;
-      color: #c08080;
-      border-color: #5a3f3f;
+      color: var(--text);
+      border-color: var(--border-strong);
+    }
+
+    .mini-exit:hover {
+      background: #5a5a5a;
+      color: #fff;
     }
 
     /* Layout override for MINIMUM MODE */
