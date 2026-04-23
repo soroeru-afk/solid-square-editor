@@ -374,13 +374,6 @@
       gap: 14px;
     }
 
-    .status-row {
-      grid-column: span 12;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
     .action-btn {
       min-height: 56px;
       font-family: var(--title-font);
@@ -405,189 +398,23 @@
       border-color: var(--control-accent);
     }
 
-    /* ─── MINIMUM MODE (evolved focus) ─── */
-    .hud-bar {
-      display: none;
-      align-items: center;
-      gap: 10px;
-      height: 28px;
-      padding: 0 12px;
-      background: #0d0d0d;
-      border: 1px solid var(--border);
-      border-bottom: 1px solid var(--border-strong);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.03), 0 2px 8px rgba(0,0,0,0.6);
+    body.focus-mode .app {
+      grid-template-rows: 1fr auto;
+    }
+
+    body.focus-mode .toolbar {
+      opacity: 0;
+      max-height: 0;
       overflow: hidden;
-      flex-shrink: 0;
+      pointer-events: none;
+      padding-top: 0;
+      padding-bottom: 0;
+      margin: 0;
+      border-width: 0;
     }
 
-    .hud-title {
-      font-family: var(--title-font);
-      font-size: 10px;
-      letter-spacing: 0.12em;
-      font-weight: 700;
-      color: var(--text);
-      white-space: nowrap;
-      text-transform: uppercase;
-      opacity: 0.85;
-    }
-
-    .hud-sub {
-      font-family: var(--title-font);
-      font-size: 9px;
-      letter-spacing: 0.1em;
-      color: var(--muted);
-      white-space: nowrap;
-      text-transform: uppercase;
-      opacity: 0.6;
-    }
-
-    .hud-sep {
-      width: 1px;
-      height: 14px;
-      background: var(--border-strong);
-      flex-shrink: 0;
-    }
-
-    .hud-input {
-      height: 18px;
-      padding: 0 6px;
-      font-family: var(--title-font);
-      font-size: 9px;
-      letter-spacing: 0.04em;
-      border: 1px solid var(--border-strong);
-      background: #161616;
-      color: var(--text);
-      outline: none;
-      min-width: 90px;
-    }
-
-    .hud-mini-btn {
-      height: 18px;
-      padding: 0 6px;
-      font-family: var(--title-font);
-      font-size: 9px;
-      letter-spacing: 0.06em;
-      font-weight: 700;
-      text-transform: uppercase;
-      border: 1px solid var(--border-strong);
-      background: #1e1e1e;
-      color: var(--muted);
-      cursor: pointer;
-      white-space: nowrap;
-      transition: background 80ms, color 80ms;
-    }
-    .hud-mini-btn:hover {
-      background: var(--control-accent);
-      color: #111;
-      border-color: var(--control-accent);
-    }
-
-    .hud-size {
-      font-family: var(--title-font);
-      font-size: 10px;
-      letter-spacing: 0.08em;
-      color: var(--control-accent);
-      font-weight: 700;
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-
-    .hud-theme-dots {
-      display: flex;
-      gap: 4px;
-      align-items: center;
-      flex-shrink: 0;
-    }
-
-    .hud-dot {
-      width: 8px;
-      height: 8px;
-      border: 1px solid rgba(255,255,255,0.15);
-      cursor: pointer;
-      transition: transform 80ms, box-shadow 80ms;
-      flex-shrink: 0;
-    }
-    .hud-dot:hover {
-      transform: scale(1.3);
-      box-shadow: 0 0 4px currentColor;
-    }
-    .hud-dot[aria-pressed="true"] {
-      outline: 1px solid var(--text);
-      outline-offset: 1px;
-    }
-
-    .hud-exit-btn {
-      margin-left: auto;
-      height: 18px;
-      padding: 0 8px;
-      font-family: var(--title-font);
-      font-size: 9px;
-      letter-spacing: 0.1em;
-      font-weight: 700;
-      text-transform: uppercase;
-      border: 1px solid #5a3f3f;
-      background: #2a1e1e;
-      color: #c08080;
-      cursor: pointer;
-      white-space: nowrap;
-      flex-shrink: 0;
-      transition: background 80ms, color 80ms;
-    }
-    .hud-exit-btn:hover {
-      background: #5a2e2e;
-      color: #f0b0b0;
-      border-color: #8a4040;
-    }
-
-    /* char count in status bar */
-    .char-count {
-      font-family: var(--title-font);
-      font-size: 10px;
-      letter-spacing: 0.06em;
-      color: var(--muted);
-      white-space: nowrap;
-      margin-left: auto;
-      opacity: 0.7;
-    }
-
-    .status-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    /* MINIMUM MODE active states */
-    body.minimum-mode .hud-bar {
-      display: flex;
-    }
-
-    body.minimum-mode .app {
-      padding: 0;
-      gap: 0;
-      display: flex;
-      flex-direction: column;
-    }
-
-    body.minimum-mode .toolbar {
-      display: none;
-    }
-
-    body.minimum-mode .editor-wrap {
-      flex: 1;
-      padding: 12px;
-      border-left: none;
-      border-right: none;
-      border-bottom: none;
-      border-top: 1px solid var(--border);
-    }
-
-    body.minimum-mode .editor-wrap textarea {
-      height: 100%;
-      min-height: 0;
-    }
-
-    body.minimum-mode .footer {
-      display: none;
+    body.focus-mode .editor-wrap textarea {
+      min-height: calc(100vh - 170px);
     }
 
     @media (max-width: 1100px) {
@@ -643,27 +470,6 @@
   </style>
 </head>
 <body>
-  <div class="hud-bar" id="hudBar">
-    <span class="hud-title">SOLID SQUARE EDITOR</span>
-    <span class="hud-sub">Studio Control Surface</span>
-    <div class="hud-sep"></div>
-    <span class="hud-size" id="hudFontSize">16px</span>
-    <div class="hud-sep"></div>
-    <input id="hudFind" class="hud-input" type="text" placeholder="FIND">
-    <input id="hudReplace" class="hud-input" type="text" placeholder="REPLACE">
-    <button id="hudNextBtn" class="hud-mini-btn">NEXT</button>
-    <button id="hudReplaceBtn" class="hud-mini-btn">REP</button>
-    <button id="hudReplaceAllBtn" class="hud-mini-btn">ALL</button>
-    <div class="hud-sep"></div>
-    <div class="hud-theme-dots" id="hudThemeDots">
-      <div class="hud-dot" data-theme="dark"  style="background:#8ea3c7" title="Dark"  aria-pressed="true"></div>
-      <div class="hud-dot" data-theme="light" style="background:#e8edf7" title="Light" aria-pressed="false"></div>
-      <div class="hud-dot" data-theme="black" style="background:#5a5a5a" title="Black" aria-pressed="false"></div>
-      <div class="hud-dot" data-theme="gray"  style="background:#b0b8c4" title="Gray"  aria-pressed="false"></div>
-      <div class="hud-dot" data-theme="red"   style="background:#c5aa88" title="Red"   aria-pressed="false"></div>
-    </div>
-    <button id="hudExitBtn" class="hud-exit-btn">&#x2715; EXIT FOCUS</button>
-  </div>
   <main class="app">
     <section class="panel toolbar">
       <div class="title-strip">
@@ -747,10 +553,7 @@
         </div>
       </div>
 
-      <div class="full status-row">
-        <div class="status" id="status" style="flex:1;margin-top:2px;">SYSTEM READY</div>
-        <div class="char-count" id="charCount">0 chars</div>
-      </div>
+      <div class="full status" id="status">SYSTEM READY</div>
     </section>
 
     <section class="panel editor-wrap">
@@ -1156,81 +959,11 @@
       setStatus("FIND/REPLACE & SNAPSHOT CLEARED");
     });
 
-    // ── character count ──
-    const charCount = document.getElementById("charCount");
-    function updateCharCount() {
-      const len = editor.value.length;
-      charCount.textContent = `${len.toLocaleString()} chars`;
-    }
-    editor.addEventListener("input", updateCharCount);
-    updateCharCount();
-
-    // ── HUD bar controls ──
-    const hudFontSize  = document.getElementById("hudFontSize");
-    const hudFind      = document.getElementById("hudFind");
-    const hudReplace   = document.getElementById("hudReplace");
-    const hudNextBtn   = document.getElementById("hudNextBtn");
-    const hudReplaceBtn    = document.getElementById("hudReplaceBtn");
-    const hudReplaceAllBtn = document.getElementById("hudReplaceAllBtn");
-    const hudExitBtn   = document.getElementById("hudExitBtn");
-    const hudThemeDots = document.querySelectorAll(".hud-dot");
-
-    function syncHudToMain() {
-      // mirror find/replace inputs bidirectionally
-      hudFind.value    = findInput.value;
-      hudReplace.value = replaceInput.value;
-      hudFontSize.textContent = `${fontSize.value}px`;
-      hudThemeDots.forEach(dot => {
-        dot.setAttribute("aria-pressed", String(dot.dataset.theme === activeTheme));
-      });
-    }
-
-    hudFind.addEventListener("input", () => { findInput.value = hudFind.value; });
-    hudReplace.addEventListener("input", () => { replaceInput.value = hudReplace.value; });
-    hudNextBtn.addEventListener("click", findNext);
-    hudReplaceBtn.addEventListener("click", replaceCurrent);
-    hudReplaceAllBtn.addEventListener("click", replaceAll);
-
-    hudThemeDots.forEach(dot => {
-      dot.addEventListener("click", () => {
-        activeTheme = dot.dataset.theme;
-        applyTheme(activeTheme);
-        saveState(activeTheme);
-        syncHudToMain();
-        setStatus(`THEME: ${activeTheme.toUpperCase()}`);
-      });
-    });
-
-    // keep HUD font size in sync when slider moves
-    [fontSize, fontWeight, lineHeight, fontFamily].forEach(el => {
-      el.addEventListener(el.tagName === "SELECT" ? "change" : "input", () => {
-        hudFontSize.textContent = `${fontSize.value}px`;
-      });
-    });
-
-    // ── MINIMUM MODE toggle ──
-    function enterMinimumMode() {
-      document.body.classList.add("minimum-mode");
-      focusModeBtn.textContent = "EXIT FOCUS";
-      syncHudToMain();
-      setStatus("MINIMUM MODE: ON");
-    }
-
-    function exitMinimumMode() {
-      document.body.classList.remove("minimum-mode");
-      focusModeBtn.textContent = "READING FOCUS";
-      setStatus("MINIMUM MODE: OFF");
-    }
-
     focusModeBtn.addEventListener("click", () => {
-      if (document.body.classList.contains("minimum-mode")) {
-        exitMinimumMode();
-      } else {
-        enterMinimumMode();
-      }
+      const focused = document.body.classList.toggle("focus-mode");
+      focusModeBtn.textContent = focused ? "EXIT FOCUS" : "READING FOCUS";
+      setStatus(focused ? "READING FOCUS: ON" : "READING FOCUS: OFF");
     });
-
-    hudExitBtn.addEventListener("click", exitMinimumMode);
 
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", async () => {
