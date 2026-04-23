@@ -33,9 +33,13 @@
       border-radius: 0;
     }
 
+    html, body {
+      height: 100%;
+      overflow: hidden; /* Prevent window-level scrollbar */
+    }
+
     body {
       margin: 0;
-      min-height: 100vh;
       background: linear-gradient(180deg, #161616 0%, var(--bg) 100%);
       color: var(--text);
       font-family: var(--ui-font);
@@ -43,7 +47,7 @@
 
     .app {
       width: min(1320px, 100%);
-      min-height: 100vh;
+      height: 100%; /* Lock to viewport height */
       margin: 0 auto;
       padding: 24px;
       display: grid;
@@ -445,7 +449,9 @@
       background: var(--bg);
       color: var(--text);
       outline: none;
-      min-width: 80px;
+      min-width: 0; /* Allow shrinking */
+      flex: 1;      /* Grow within limits */
+      max-width: 120px;
     }
 
     .mini-btn-box {
@@ -497,18 +503,18 @@
 
     /* Layout override for MINIMUM MODE */
     body.minimum-mode .app {
-      grid-template-rows: auto 1fr auto; /* Grid keeps footer at the bottom */
+      grid-template-rows: auto 1fr auto;
     }
 
     body.minimum-mode .toolbar {
       padding: 16px;
-      gap: 0; /* Controls are hidden, so gap between them is 0 */
+      gap: 0;
     }
 
     body.minimum-mode .title-strip {
-      padding-bottom: 10px; /* EXACT MATCH with line 75 */
+      padding-bottom: 10px;
       border-bottom: 1px solid var(--border);
-      margin-bottom: 4px;   /* EXACT MATCH with line 77 */
+      margin-bottom: 4px;
     }
 
     body.minimum-mode .toolbar .control,
@@ -519,12 +525,11 @@
 
     body.minimum-mode .mini-strip {
       display: flex;
-      margin-top: 4px; /* Compensate for hidden elements to keep total height stable */
+      margin-top: 4px;
     }
 
     body.minimum-mode textarea {
-      height: 100%; /* Fill the 1fr grid space naturally */
-      min-height: 0; 
+      height: 100%;
     }
 
     /* Footer and Editor Wrap inherit all styles from normal mode */
