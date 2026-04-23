@@ -1,0 +1,979 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#121212">
+  <meta name="description" content="スクエアでソリッドなPWAテキストエディタ">
+  <link rel="manifest" href="./manifest.json">
+  <title>Solid Square Editor</title>
+  <style>
+    :root {
+      --bg: #121212;
+      --panel: #1b1b1b;
+      --surface: #232323;
+      --surface-2: #1f1f1f;
+      --text: #ececec;
+      --muted: #9b9b9b;
+      --accent: #8ea3c7;
+      --control-accent: #8ea3c7;
+      --border: #303030;
+      --border-strong: #434343;
+      --title-font: "JetBrains Mono", "Consolas", "SFMono-Regular", "Meiryo", monospace;
+      --ui-font: system-ui, -apple-system, "Segoe UI", Meiryo, sans-serif;
+      --editor-bg: #171717;
+      --editor-text: #f0f0f0;
+      --editor-border: #363636;
+      --editor-shadow-top: rgba(255, 255, 255, 0.02);
+      --editor-shadow-bottom: rgba(0, 0, 0, 0.45);
+    }
+
+    * {
+      box-sizing: border-box;
+      border-radius: 0;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(180deg, #161616 0%, var(--bg) 100%);
+      color: var(--text);
+      font-family: var(--ui-font);
+    }
+
+    .app {
+      width: min(1320px, 100%);
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 24px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 18px;
+      transition: grid-template-rows 160ms linear;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02), inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+    }
+
+    .toolbar {
+      padding: 16px;
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 14px;
+      align-items: start;
+      transition: opacity 140ms linear, max-height 180ms linear, padding 180ms linear, margin 180ms linear;
+    }
+
+    .title-strip {
+      grid-column: span 12;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 4px;
+    }
+
+    .title-main {
+      font-family: var(--title-font);
+      font-size: 16px;
+      letter-spacing: 0.08em;
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .title-sub {
+      font-family: var(--title-font);
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .control {
+      min-width: 0;
+      display: grid;
+      gap: 8px;
+      padding: 10px 10px 12px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2);
+    }
+
+    .label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: var(--title-font);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .value {
+      color: var(--control-accent);
+      font-weight: 700;
+    }
+
+    .full {
+      grid-column: span 12;
+    }
+
+    .span-2 {
+      grid-column: span 2;
+    }
+
+    .span-3 {
+      grid-column: span 3;
+    }
+
+    .span-5 {
+      grid-column: span 5;
+    }
+
+    select,
+    button,
+    textarea,
+    input[type="range"] {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      outline: none;
+    }
+
+    .solid-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 16px;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .solid-slider::-webkit-slider-runnable-track {
+      height: 2px;
+      background: var(--border-strong);
+      border: 0;
+    }
+
+    .solid-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 12px;
+      height: 12px;
+      background: var(--control-accent);
+      border: 1px solid var(--border);
+      margin-top: -5px;
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.45);
+    }
+
+    .solid-slider::-moz-range-track {
+      height: 2px;
+      background: var(--border-strong);
+      border: 0;
+    }
+
+    .solid-slider::-moz-range-thumb {
+      width: 12px;
+      height: 12px;
+      border: 1px solid var(--border);
+      background: var(--control-accent);
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.45);
+    }
+
+    select {
+      height: 38px;
+      font-family: var(--title-font);
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      padding: 6px 8px;
+      text-transform: uppercase;
+    }
+
+    .theme-buttons {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .theme-btn {
+      height: 36px;
+      font-family: var(--title-font);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      text-transform: uppercase;
+      box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.02);
+    }
+
+    .theme-btn:hover,
+    .theme-btn[aria-pressed="true"] {
+      background: var(--control-accent);
+      color: #120c0c;
+      border-color: var(--control-accent);
+    }
+
+    .paper-btn {
+      height: 36px;
+      font-family: var(--title-font);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      border: 1px solid var(--border-strong);
+      cursor: pointer;
+      box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.02);
+    }
+
+    .paper-btn[aria-pressed="true"] {
+      background: #f3f3f3;
+      color: #161616;
+      border-color: #f3f3f3;
+    }
+
+    .status {
+      margin-top: 2px;
+      font-family: var(--title-font);
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      min-height: 18px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      padding: 7px 10px;
+    }
+
+    .utility-row {
+      grid-column: span 12;
+      display: grid;
+      grid-template-columns: 3fr 2fr;
+      gap: 14px;
+    }
+
+    .compact-control {
+      min-width: 0;
+      display: grid;
+      gap: 8px;
+      padding: 10px 10px 12px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2);
+    }
+
+    /* search-row: [FIND INPUT] [REPLACE INPUT] [NEXT] [REPLACE] [REPLACE ALL] */
+    .search-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto auto auto;
+      gap: 6px;
+      align-items: center;
+    }
+
+    /* ALL CLEAR は下段に単独配置 */
+    .search-clear-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 6px;
+    }
+
+    .tool-input {
+      height: 34px;
+      padding: 6px 8px;
+      font-family: var(--title-font);
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+    }
+
+    .mini-btn {
+      min-height: 34px;
+      padding: 0 10px;
+      font-family: var(--title-font);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+      text-transform: uppercase;
+      cursor: pointer;
+      border: 1px solid var(--border-strong);
+      background: var(--surface);
+      color: var(--text);
+      box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.02);
+    }
+
+    .mini-btn:hover {
+      background: var(--control-accent);
+      color: #120f0f;
+      border-color: var(--control-accent);
+    }
+
+    .snapshot-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-height: 34px;
+      align-content: flex-start;
+    }
+
+    .snapshot-item {
+      min-height: 30px;
+      padding: 0 8px;
+      font-family: var(--title-font);
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      text-transform: uppercase;
+    }
+
+    .snapshot-item:hover {
+      border-color: var(--control-accent);
+      color: var(--control-accent);
+    }
+
+    .all-clear-btn:hover {
+      background: #6a6a6a;
+      border-color: #6a6a6a;
+      color: #f2f2f2;
+    }
+
+    .editor-wrap {
+      padding: 16px;
+      display: grid;
+      min-height: 0;
+      border: 1px solid var(--border);
+      background: var(--panel);
+    }
+
+    textarea {
+      width: 100%;
+      height: 100%;
+      min-height: 420px;
+      resize: none;
+      padding: 18px;
+      line-height: 1.6;
+      font-size: 16px;
+      font-weight: 400;
+      font-family: Meiryo, sans-serif;
+      border: 1px solid var(--editor-border);
+      color: var(--editor-text);
+      background: var(--editor-bg);
+      box-shadow: inset 0 1px 0 var(--editor-shadow-top), inset 0 -1px 0 var(--editor-shadow-bottom);
+    }
+
+    .footer {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .action-btn {
+      min-height: 56px;
+      font-family: var(--title-font);
+      font-size: 13px;
+      letter-spacing: 0.12em;
+      font-weight: 700;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.02);
+      border-color: var(--border-strong);
+      color: var(--text);
+    }
+
+    .action-btn:active {
+      box-shadow: inset 0 2px 0 rgba(0, 0, 0, 0.5), inset 0 -1px 0 rgba(255, 255, 255, 0.02);
+      transform: translateY(1px);
+    }
+
+    .action-btn:hover {
+      background: var(--control-accent);
+      color: #160d0d;
+      border-color: var(--control-accent);
+    }
+
+    body.focus-mode .app {
+      grid-template-rows: 1fr auto;
+    }
+
+    body.focus-mode .toolbar {
+      opacity: 0;
+      max-height: 0;
+      overflow: hidden;
+      pointer-events: none;
+      padding-top: 0;
+      padding-bottom: 0;
+      margin: 0;
+      border-width: 0;
+    }
+
+    body.focus-mode .editor-wrap textarea {
+      min-height: calc(100vh - 170px);
+    }
+
+    @media (max-width: 1100px) {
+      .span-2,
+      .span-3,
+      .span-5 {
+        grid-column: span 6;
+      }
+
+      .theme-buttons {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .utility-row {
+        grid-template-columns: 1fr;
+      }
+
+      .search-row {
+        grid-template-columns: 1fr 1fr auto auto auto;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .app {
+        padding: 14px;
+        gap: 12px;
+      }
+
+      .toolbar,
+      .editor-wrap {
+        padding: 12px;
+      }
+
+      .span-2,
+      .span-3,
+      .span-5 {
+        grid-column: span 12;
+      }
+
+      .theme-buttons {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .footer {
+        grid-template-columns: 1fr;
+      }
+
+      textarea {
+        min-height: 320px;
+        padding: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="panel toolbar">
+      <div class="title-strip">
+        <div class="title-main">SOLID SQUARE EDITOR</div>
+        <div class="title-sub">Studio Control Surface</div>
+      </div>
+
+      <div class="control span-2">
+        <div class="label-row">
+          <label for="fontSize">01 SIZE</label>
+          <span class="value" id="fontSizeValue">16px</span>
+        </div>
+        <input id="fontSize" class="solid-slider" type="range" min="8" max="200" step="1" value="16">
+      </div>
+
+      <div class="control span-2">
+        <div class="label-row">
+          <label for="fontWeight">02 WEIGHT</label>
+          <span class="value" id="fontWeightValue">400</span>
+        </div>
+        <input id="fontWeight" class="solid-slider" type="range" min="100" max="900" step="100" value="400">
+      </div>
+
+      <div class="control span-2">
+        <div class="label-row">
+          <label for="lineHeight">03 LEADING</label>
+          <span class="value" id="lineHeightValue">1.6</span>
+        </div>
+        <input id="lineHeight" class="solid-slider" type="range" min="1" max="3" step="0.1" value="1.6">
+      </div>
+
+      <div class="control span-3">
+        <div class="label-row">
+          <label for="fontFamily">04 FONT FAMILY</label>
+        </div>
+        <select id="fontFamily">
+          <option value="Meiryo, sans-serif">MEIRYO</option>
+          <option value="'MS Gothic', monospace">MS GOTHIC</option>
+          <option value="system-ui, sans-serif">SYSTEM UI</option>
+          <option value="'Yu Gothic UI', sans-serif">YU GOTHIC UI</option>
+          <option value="'Consolas', monospace">CONSOLAS</option>
+        </select>
+      </div>
+
+      <div class="control span-3">
+        <div class="label-row">
+          <label>05 THEME BANK</label>
+        </div>
+        <div class="theme-buttons">
+          <button class="theme-btn" data-theme="dark" aria-pressed="true">Dark</button>
+          <button class="theme-btn" data-theme="light" aria-pressed="false">Light</button>
+          <button class="theme-btn" data-theme="black" aria-pressed="false">Black</button>
+          <button class="theme-btn" data-theme="gray" aria-pressed="false">Gray</button>
+          <button class="theme-btn" data-theme="red" aria-pressed="false">Red</button>
+          <button class="paper-btn" id="paperModeBtn" aria-pressed="false">Paper Mode</button>
+        </div>
+      </div>
+
+      <div class="utility-row">
+        <div class="compact-control">
+          <div class="label-row">
+            <label>06 FIND / REPLACE</label>
+          </div>
+          <div class="search-row">
+            <input id="findInput" class="tool-input" type="text" placeholder="FIND KEYWORD">
+            <input id="replaceInput" class="tool-input" type="text" placeholder="REPLACE VALUE">
+            <button id="findNextBtn" class="mini-btn" type="button">NEXT</button>
+            <button id="replaceOneBtn" class="mini-btn" type="button">REPLACE</button>
+            <button id="replaceAllBtn" class="mini-btn" type="button">REPLACE ALL</button>
+          </div>
+          <div class="search-clear-row">
+            <button id="allClearBtn" class="mini-btn all-clear-btn" type="button">ALL CLEAR</button>
+          </div>
+        </div>
+
+        <div class="compact-control">
+          <div class="label-row">
+            <label>07 HISTORY SNAPSHOT</label>
+          </div>
+          <div id="snapshotList" class="snapshot-list"></div>
+        </div>
+      </div>
+
+      <div class="full status" id="status">SYSTEM READY</div>
+    </section>
+
+    <section class="panel editor-wrap">
+      <textarea id="editor" placeholder="ここにテキストを入力してください"></textarea>
+    </section>
+
+    <section class="footer">
+      <button class="action-btn" id="focusModeBtn">READING FOCUS</button>
+      <button class="action-btn" id="snapshotBtn">SNAPSHOT</button>
+      <button class="action-btn copy" id="copyBtn">COPY</button>
+      <button class="action-btn clear" id="clearBtn">CLEAR</button>
+      <button class="action-btn save" id="saveBtn">SAVE</button>
+    </section>
+  </main>
+
+  <script>
+    const THEMES = {
+      dark: {
+        bg: "#121722",
+        panel: "#191f2c",
+        surface: "#212a38",
+        surface2: "#1b2432",
+        text: "#e8edf7",
+        muted: "#8f98aa",
+        accent: "#8ea3c7",
+        controlAccent: "#8ea3c7",
+        border: "#303b4c",
+        borderStrong: "#435167"
+      },
+      light: {
+        bg: "#eceff3",
+        panel: "#f7f8fb",
+        surface: "#ffffff",
+        surface2: "#f0f2f6",
+        text: "#212733",
+        muted: "#6a7485",
+        accent: "#6d83aa",
+        controlAccent: "#6d83aa",
+        border: "#c7ced9",
+        borderStrong: "#a3afc0"
+      },
+      black: {
+        bg: "#121212",
+        panel: "#1b1b1b",
+        surface: "#232323",
+        surface2: "#1f1f1f",
+        text: "#ececec",
+        muted: "#9b9b9b",
+        accent: "#8a8f99",
+        controlAccent: "#8a8f99",
+        border: "#303030",
+        borderStrong: "#434343"
+      },
+      gray: {
+        bg: "#d9dde3",
+        panel: "#e7ebf1",
+        surface: "#f2f4f8",
+        surface2: "#e1e6ee",
+        text: "#2a313e",
+        muted: "#6e788a",
+        accent: "#7f8fa8",
+        controlAccent: "#7f8fa8",
+        border: "#b6bfcd",
+        borderStrong: "#99a5b8"
+      },
+      red: {
+        bg: "#151212",
+        panel: "#1f1818",
+        surface: "#2b2222",
+        surface2: "#241d1d",
+        text: "#f0e9e9",
+        muted: "#b9a8a8",
+        accent: "#c5aa88",
+        controlAccent: "#c5aa88",
+        border: "#443232",
+        borderStrong: "#5a3f3f"
+      }
+    };
+
+    const root = document.documentElement;
+    const editor = document.getElementById("editor");
+    const status = document.getElementById("status");
+    const fontSize = document.getElementById("fontSize");
+    const fontWeight = document.getElementById("fontWeight");
+    const lineHeight = document.getElementById("lineHeight");
+    const fontFamily = document.getElementById("fontFamily");
+    const fontSizeValue = document.getElementById("fontSizeValue");
+    const fontWeightValue = document.getElementById("fontWeightValue");
+    const lineHeightValue = document.getElementById("lineHeightValue");
+    const paperModeBtn = document.getElementById("paperModeBtn");
+    const focusModeBtn = document.getElementById("focusModeBtn");
+    const snapshotBtn = document.getElementById("snapshotBtn");
+    const snapshotList = document.getElementById("snapshotList");
+    const findInput = document.getElementById("findInput");
+    const replaceInput = document.getElementById("replaceInput");
+    const findNextBtn = document.getElementById("findNextBtn");
+    const replaceOneBtn = document.getElementById("replaceOneBtn");
+    const replaceAllBtn = document.getElementById("replaceAllBtn");
+    const allClearBtn = document.getElementById("allClearBtn");
+    const STORAGE_KEY = "solid-square-editor-state-v3";
+    const snapshots = [];
+    let findCursor = 0;
+
+    function setStatus(text) {
+      status.textContent = text;
+    }
+
+    function applyTheme(name) {
+      const t = THEMES[name] || THEMES.dark;
+      root.style.setProperty("--bg", t.bg);
+      root.style.setProperty("--panel", t.panel);
+      root.style.setProperty("--surface", t.surface);
+      root.style.setProperty("--surface-2", t.surface2);
+      root.style.setProperty("--text", t.text);
+      root.style.setProperty("--muted", t.muted);
+      root.style.setProperty("--accent", t.accent);
+      root.style.setProperty("--control-accent", t.controlAccent);
+      root.style.setProperty("--border", t.border);
+      root.style.setProperty("--border-strong", t.borderStrong);
+      document.querySelector('meta[name="theme-color"]').setAttribute("content", t.bg);
+      document.querySelectorAll(".theme-btn").forEach((btn) => {
+        btn.setAttribute("aria-pressed", String(btn.dataset.theme === name));
+      });
+    }
+
+    function applyPaperMode(enabled) {
+      if (enabled) {
+        root.style.setProperty("--editor-bg", "#f4f4f4");
+        root.style.setProperty("--editor-text", "#141414");
+        root.style.setProperty("--editor-border", "#cecece");
+        root.style.setProperty("--editor-shadow-top", "rgba(255, 255, 255, 0.75)");
+        root.style.setProperty("--editor-shadow-bottom", "rgba(0, 0, 0, 0.08)");
+      } else {
+        root.style.setProperty("--editor-bg", "#171717");
+        root.style.setProperty("--editor-text", "#f0f0f0");
+        root.style.setProperty("--editor-border", "#363636");
+        root.style.setProperty("--editor-shadow-top", "rgba(255, 255, 255, 0.02)");
+        root.style.setProperty("--editor-shadow-bottom", "rgba(0, 0, 0, 0.45)");
+      }
+      paperModeBtn.setAttribute("aria-pressed", String(enabled));
+    }
+
+    function applyTypography() {
+      const size = Number(fontSize.value);
+      const weight = Number(fontWeight.value);
+      const lh = Number(lineHeight.value);
+      editor.style.fontSize = `${size}px`;
+      editor.style.fontWeight = String(weight);
+      editor.style.lineHeight = String(lh);
+      editor.style.fontFamily = fontFamily.value;
+      fontSizeValue.textContent = `${size}px`;
+      fontWeightValue.textContent = String(weight);
+      lineHeightValue.textContent = lh.toFixed(1);
+    }
+
+    function escapeRegExp(input) {
+      return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }
+
+    function normalizeFilenameSeed(text) {
+      const cleaned = text
+        .replace(/\r?\n/g, " ")
+        .replace(/\s+/g, " ")
+        .replace(/[<>:"/\\|?*\u0000-\u001F]/g, "")
+        .trim();
+      return (cleaned || "untitled").slice(0, 15);
+    }
+
+    function buildSuggestedFilename() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, "0");
+      const d = String(now.getDate()).padStart(2, "0");
+      const h = String(now.getHours()).padStart(2, "0");
+      const min = String(now.getMinutes()).padStart(2, "0");
+      const head = normalizeFilenameSeed(editor.value);
+      return `${y}${m}${d}_${h}${min}_「${head}」.txt`;
+    }
+
+    function renderSnapshots() {
+      snapshotList.innerHTML = "";
+      if (snapshots.length === 0) {
+        const hint = document.createElement("span");
+        hint.className = "title-sub";
+        hint.textContent = "NO SNAPSHOT";
+        snapshotList.appendChild(hint);
+        return;
+      }
+      snapshots.forEach((snap, idx) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "snapshot-item";
+        btn.textContent = `${String(idx + 1).padStart(2, "0")} ${snap.label}`;
+        btn.addEventListener("click", () => {
+          editor.value = snap.text;
+          applyTypography();
+          saveState(activeTheme);
+          setStatus(`SNAPSHOT LOADED: ${String(idx + 1).padStart(2, "0")}`);
+        });
+        snapshotList.appendChild(btn);
+      });
+    }
+
+    async function saveAsTextFile() {
+      const filename = buildSuggestedFilename();
+      if ("showSaveFilePicker" in window) {
+        try {
+          const handle = await window.showSaveFilePicker({
+            suggestedName: filename,
+            types: [
+              {
+                description: "Text Files",
+                accept: { "text/plain": [".txt"] }
+              }
+            ]
+          });
+          const writable = await handle.createWritable();
+          await writable.write(editor.value);
+          await writable.close();
+          setStatus(`FILE SAVED: ${filename}`);
+        } catch (error) {
+          if (error && error.name === "AbortError") {
+            setStatus("SAVE CANCELED");
+            return;
+          }
+          setStatus("SAVE FAILED");
+        }
+        return;
+      }
+
+      const blob = new Blob([editor.value], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      setStatus(`FILE SAVED: ${filename}`);
+    }
+
+    function findNext() {
+      const needle = findInput.value;
+      if (!needle) {
+        setStatus("FIND KEYWORD IS EMPTY");
+        return;
+      }
+      const text = editor.value;
+      const index = text.indexOf(needle, findCursor);
+      const foundIndex = index !== -1 ? index : text.indexOf(needle, 0);
+      if (foundIndex === -1) {
+        setStatus("NO MATCH");
+        return;
+      }
+      editor.focus();
+      editor.setSelectionRange(foundIndex, foundIndex + needle.length);
+      findCursor = foundIndex + needle.length;
+      setStatus(`FOUND AT: ${foundIndex}`);
+    }
+
+    function replaceCurrent() {
+      const needle = findInput.value;
+      if (!needle) {
+        setStatus("FIND KEYWORD IS EMPTY");
+        return;
+      }
+      const replacement = replaceInput.value;
+      const start = editor.selectionStart;
+      const end = editor.selectionEnd;
+      const selected = editor.value.slice(start, end);
+      if (selected === needle) {
+        editor.setRangeText(replacement, start, end, "end");
+        saveState(activeTheme);
+        setStatus("ONE MATCH REPLACED");
+        return;
+      }
+      findNext();
+    }
+
+    function replaceAll() {
+      const needle = findInput.value;
+      if (!needle) {
+        setStatus("TARGET KEYWORD IS EMPTY");
+        return;
+      }
+      const replacement = replaceInput.value;
+      const reg = new RegExp(escapeRegExp(needle), "g");
+      const matches = editor.value.match(reg);
+      if (!matches) {
+        setStatus("NO MATCH FOR REPLACE ALL");
+        return;
+      }
+      editor.value = editor.value.replace(reg, replacement);
+      saveState(activeTheme);
+      setStatus(`REPLACED: ${matches.length}`);
+    }
+
+    function saveState(themeName) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        text: editor.value,
+        fontSize: fontSize.value,
+        fontWeight: fontWeight.value,
+        lineHeight: lineHeight.value,
+        fontFamily: fontFamily.value,
+        theme: themeName,
+        paperMode: paperModeBtn.getAttribute("aria-pressed") === "true"
+      }));
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return null;
+        return JSON.parse(raw);
+      } catch (_) {
+        return null;
+      }
+    }
+
+    let activeTheme = "dark";
+    let paperModeEnabled = false;
+    const loaded = loadState();
+    if (loaded) {
+      editor.value = loaded.text || "";
+      fontSize.value = loaded.fontSize || "16";
+      fontWeight.value = loaded.fontWeight || "400";
+      lineHeight.value = loaded.lineHeight || "1.6";
+      fontFamily.value = loaded.fontFamily || "Meiryo, sans-serif";
+      activeTheme = loaded.theme || "dark";
+      paperModeEnabled = Boolean(loaded.paperMode);
+    }
+
+    applyTheme(activeTheme);
+    applyPaperMode(paperModeEnabled);
+    applyTypography();
+    renderSnapshots();
+    setStatus("SYSTEM READY");
+
+    document.querySelectorAll(".theme-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        activeTheme = btn.dataset.theme;
+        applyTheme(activeTheme);
+        saveState(activeTheme);
+        setStatus(`THEME CHANGED: ${btn.textContent.toUpperCase()}`);
+      });
+    });
+
+    paperModeBtn.addEventListener("click", () => {
+      paperModeEnabled = !paperModeEnabled;
+      applyPaperMode(paperModeEnabled);
+      saveState(activeTheme);
+      setStatus(paperModeEnabled ? "PAPER MODE: ON" : "PAPER MODE: OFF");
+    });
+
+    [fontSize, fontWeight, lineHeight, fontFamily].forEach((el) => {
+      const eventName = el.tagName === "SELECT" ? "change" : "input";
+      el.addEventListener(eventName, () => {
+        applyTypography();
+        saveState(activeTheme);
+        setStatus("TYPOGRAPHY UPDATED");
+      });
+    });
+
+    editor.addEventListener("input", () => {
+      saveState(activeTheme);
+    });
+
+    document.getElementById("copyBtn").addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(editor.value);
+        setStatus("TEXT COPIED");
+      } catch (_) {
+        setStatus("COPY FAILED");
+      }
+    });
+
+    document.getElementById("clearBtn").addEventListener("click", () => {
+      editor.value = "";
+      saveState(activeTheme);
+      setStatus("TEXT CLEARED");
+    });
+
+    document.getElementById("saveBtn").addEventListener("click", () => {
+      saveAsTextFile();
+    });
+
+    snapshotBtn.addEventListener("click", () => {
+      const head = normalizeFilenameSeed(editor.value);
+      snapshots.push({ text: editor.value, label: head });
+      if (snapshots.length > 20) snapshots.shift();
+      renderSnapshots();
+      setStatus(`SNAPSHOT SAVED: ${String(snapshots.length).padStart(2, "0")}`);
+    });
+
+    findNextBtn.addEventListener("click", findNext);
+    replaceOneBtn.addEventListener("click", replaceCurrent);
+    replaceAllBtn.addEventListener("click", replaceAll);
+    allClearBtn.addEventListener("click", () => {
+      findInput.value = "";
+      replaceInput.value = "";
+      findCursor = 0;
+      snapshots.length = 0;
+      renderSnapshots();
+      setStatus("FIND/REPLACE & SNAPSHOT CLEARED");
+    });
+
+    focusModeBtn.addEventListener("click", () => {
+      const focused = document.body.classList.toggle("focus-mode");
+      focusModeBtn.textContent = focused ? "EXIT FOCUS" : "READING FOCUS";
+      setStatus(focused ? "READING FOCUS: ON" : "READING FOCUS: OFF");
+    });
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", async () => {
+        try {
+          await navigator.serviceWorker.register("./sw.js");
+        } catch (_) {
+          setStatus("SERVICE WORKER ERROR");
+        }
+      });
+    }
+  </script>
+</body>
+</html>
