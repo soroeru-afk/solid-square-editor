@@ -497,13 +497,12 @@
 
     /* Layout override for MINIMUM MODE */
     body.minimum-mode .app {
-      padding: 12px;
-      gap: 12px;
-      grid-template-rows: auto 1fr auto; /* Keep footer visible */
+      /* Keep identical grid structure to avoid shifting */
+      grid-template-rows: auto 1fr auto;
     }
 
     body.minimum-mode .toolbar {
-      padding: 12px 16px;
+      padding: 16px; /* Match normal mode */
       gap: 0;
     }
 
@@ -523,16 +522,12 @@
       display: flex;
     }
 
-    body.minimum-mode .editor-wrap {
-      padding: 0;
-    }
-
     body.minimum-mode textarea {
-      min-height: calc(100vh - 210px); /* Leave room for header and footer */
+      min-height: calc(100vh - 240px); /* Slightly adjusted for consistent padding */
       border: 1px solid var(--editor-border);
     }
 
-    /* Footer is now visible in minimum mode by default */
+    /* Footer and Editor Wrap padding are now inherited from normal mode (no override) */
 
     /* Char count style */
     .char-count {
