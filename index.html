@@ -402,19 +402,152 @@
       grid-template-rows: 1fr auto;
     }
 
-    body.focus-mode .toolbar {
-      opacity: 0;
-      max-height: 0;
+    /* ─── MINIMUM MODE (evolved focus) ─── */
+    .mini-strip {
+      display: none; /* Hidden by default */
+      grid-column: span 12;
+      align-items: center;
+      gap: 12px;
+      height: 28px;
+      padding: 0 4px;
+      margin-top: -4px;
       overflow: hidden;
-      pointer-events: none;
-      padding-top: 0;
-      padding-bottom: 0;
-      margin: 0;
-      border-width: 0;
     }
 
-    body.focus-mode .editor-wrap textarea {
-      min-height: calc(100vh - 170px);
+    .mini-sep {
+      width: 1px;
+      height: 14px;
+      background: var(--border-strong);
+      opacity: 0.5;
+    }
+
+    .mini-label {
+      font-family: var(--title-font);
+      font-size: 9px;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .mini-value {
+      font-family: var(--title-font);
+      font-size: 10px;
+      color: var(--control-accent);
+      font-weight: 700;
+    }
+
+    .mini-input {
+      height: 20px;
+      padding: 0 6px;
+      font-family: var(--title-font);
+      font-size: 10px;
+      border: 1px solid var(--border-strong);
+      background: var(--editor-bg);
+      color: var(--text);
+      outline: none;
+      min-width: 80px;
+    }
+
+    .mini-btn-box {
+      height: 20px;
+      padding: 0 8px;
+      font-family: var(--title-font);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      border: 1px solid var(--border-strong);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .mini-btn-box:hover {
+      background: var(--control-accent);
+      color: #121212;
+    }
+
+    .mini-dots {
+      display: flex;
+      gap: 5px;
+    }
+
+    .mini-dot {
+      width: 8px;
+      height: 8px;
+      border: 1px solid rgba(255,255,255,0.2);
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+
+    .mini-dot:hover {
+      transform: scale(1.4);
+    }
+
+    .mini-dot[aria-pressed="true"] {
+      border-color: var(--text);
+      box-shadow: 0 0 4px var(--control-accent);
+    }
+
+    .mini-exit {
+      margin-left: auto;
+      color: #c08080;
+      border-color: #5a3f3f;
+    }
+
+    /* Layout override for MINIMUM MODE */
+    body.minimum-mode .app {
+      padding: 12px;
+      gap: 8px;
+      grid-template-rows: auto 1fr;
+    }
+
+    body.minimum-mode .toolbar {
+      padding: 10px 16px;
+    }
+
+    body.minimum-mode .title-strip {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 6px;
+    }
+
+    body.minimum-mode .toolbar .control,
+    body.minimum-mode .toolbar .utility-row,
+    body.minimum-mode .status-row .status {
+       display: none;
+    }
+
+    body.minimum-mode .mini-strip {
+      display: flex;
+    }
+
+    body.minimum-mode .editor-wrap {
+      padding: 0;
+    }
+
+    body.minimum-mode textarea {
+      min-height: calc(100vh - 100px);
+      border-top: 1px solid var(--border);
+    }
+
+    body.minimum-mode .footer {
+      display: none;
+    }
+
+    /* Char count style */
+    .char-count {
+      font-family: var(--title-font);
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+    }
+
+    .status-row {
+      grid-column: span 12;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     @media (max-width: 1100px) {
@@ -475,6 +608,26 @@
       <div class="title-strip">
         <div class="title-main">SOLID SQUARE EDITOR</div>
         <div class="title-sub">Studio Control Surface</div>
+      </div>
+
+      <!-- MINI HUD STRIP -->
+      <div class="mini-strip" id="miniStrip">
+        <span class="mini-label">SIZE</span>
+        <span class="mini-value" id="miniSizeVal">16PX</span>
+        <div class="mini-sep"></div>
+        <input type="text" id="miniFind" class="mini-input" placeholder="FIND">
+        <input type="text" id="miniReplace" class="mini-input" placeholder="REP">
+        <button class="mini-btn-box" id="miniNextBtn">NEXT</button>
+        <button class="mini-btn-box" id="miniReplaceBtn">SET</button>
+        <div class="mini-sep"></div>
+        <div class="mini-dots" id="miniDots">
+          <div class="mini-dot" data-theme="dark" style="background:#8ea3c7" title="Dark"></div>
+          <div class="mini-dot" data-theme="light" style="background:#e8edf7" title="Light"></div>
+          <div class="mini-dot" data-theme="black" style="background:#5a5a5a" title="Black"></div>
+          <div class="mini-dot" data-theme="gray" style="background:#b0b8c4" title="Gray"></div>
+          <div class="mini-dot" data-theme="red" style="background:#c5aa88" title="Red"></div>
+        </div>
+        <button class="mini-btn-box mini-exit" id="miniExitBtn">EXIT FOCUS</button>
       </div>
 
       <div class="control span-2">
@@ -553,7 +706,10 @@
         </div>
       </div>
 
-      <div class="full status" id="status">SYSTEM READY</div>
+      <div class="status-row">
+        <div class="status" id="status" style="flex:1; border:none; background:none; padding:0;">SYSTEM READY</div>
+        <div class="char-count" id="charCount">CHARS: 0</div>
+      </div>
     </section>
 
     <section class="panel editor-wrap">
@@ -959,10 +1115,63 @@
       setStatus("FIND/REPLACE & SNAPSHOT CLEARED");
     });
 
+    // --- Character Count Logic ---
+    const charCountEl = document.getElementById("charCount");
+    function updateCharCount() {
+      const len = editor.value.length;
+      charCountEl.textContent = `CHARS: ${len.toLocaleString()}`;
+    }
+    editor.addEventListener("input", updateCharCount);
+    updateCharCount();
+
+    // --- Mini Strip Logic ---
+    const miniSizeVal = document.getElementById("miniSizeVal");
+    const miniFind = document.getElementById("miniFind");
+    const miniReplace = document.getElementById("miniReplace");
+    const miniNextBtn = document.getElementById("miniNextBtn");
+    const miniReplaceBtn = document.getElementById("miniReplaceBtn");
+    const miniExitBtn = document.getElementById("miniExitBtn");
+
+    function syncMiniStrip() {
+      miniSizeVal.textContent = `${fontSize.value}PX`;
+      miniFind.value = findInput.value;
+      miniReplace.value = replaceInput.value;
+      
+      document.querySelectorAll(".mini-dot").forEach(dot => {
+        dot.setAttribute("aria-pressed", String(dot.dataset.theme === activeTheme));
+      });
+    }
+
+    miniFind.addEventListener("input", () => { findInput.value = miniFind.value; });
+    miniReplace.addEventListener("input", () => { replaceInput.value = miniReplace.value; });
+    miniNextBtn.addEventListener("click", findNext);
+    miniReplaceBtn.addEventListener("click", replaceCurrent);
+    miniExitBtn.addEventListener("click", () => {
+       document.body.classList.remove("minimum-mode");
+       focusModeBtn.textContent = "READING FOCUS";
+       setStatus("MINIMUM MODE: OFF");
+    });
+
+    document.querySelectorAll(".mini-dot").forEach(dot => {
+      dot.addEventListener("click", () => {
+        activeTheme = dot.dataset.theme;
+        applyTheme(activeTheme);
+        saveState(activeTheme);
+        syncMiniStrip();
+        setStatus(`THEME: ${activeTheme.toUpperCase()}`);
+      });
+    });
+
+    // Update mini values when main inputs change
+    [fontSize, fontWeight, lineHeight, fontFamily].forEach(el => {
+      el.addEventListener(el.tagName === "SELECT" ? "change" : "input", syncMiniStrip);
+    });
+
     focusModeBtn.addEventListener("click", () => {
-      const focused = document.body.classList.toggle("focus-mode");
-      focusModeBtn.textContent = focused ? "EXIT FOCUS" : "READING FOCUS";
-      setStatus(focused ? "READING FOCUS: ON" : "READING FOCUS: OFF");
+      const isMini = document.body.classList.toggle("minimum-mode");
+      focusModeBtn.textContent = isMini ? "EXIT FOCUS" : "READING FOCUS";
+      if (isMini) syncMiniStrip();
+      setStatus(isMini ? "MINIMUM MODE: ON" : "MINIMUM MODE: OFF");
     });
 
     if ("serviceWorker" in navigator) {
