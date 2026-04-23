@@ -497,19 +497,18 @@
 
     /* Layout override for MINIMUM MODE */
     body.minimum-mode .app {
-      /* Keep identical grid structure to avoid shifting */
-      grid-template-rows: auto 1fr auto;
+      grid-template-rows: auto 1fr auto; /* Grid keeps footer at the bottom */
     }
 
     body.minimum-mode .toolbar {
-      padding: 16px; /* Match normal mode */
-      gap: 0;
+      padding: 16px;
+      gap: 0; /* Controls are hidden, so gap between them is 0 */
     }
 
     body.minimum-mode .title-strip {
+      padding-bottom: 10px; /* EXACT MATCH with line 75 */
       border-bottom: 1px solid var(--border);
-      margin-bottom: 8px;
-      padding-bottom: 8px;
+      margin-bottom: 4px;   /* EXACT MATCH with line 77 */
     }
 
     body.minimum-mode .toolbar .control,
@@ -520,14 +519,15 @@
 
     body.minimum-mode .mini-strip {
       display: flex;
+      margin-top: 4px; /* Compensate for hidden elements to keep total height stable */
     }
 
     body.minimum-mode textarea {
-      min-height: calc(100vh - 240px); /* Slightly adjusted for consistent padding */
-      border: 1px solid var(--editor-border);
+      height: 100%; /* Fill the 1fr grid space naturally */
+      min-height: 0; 
     }
 
-    /* Footer and Editor Wrap padding are now inherited from normal mode (no override) */
+    /* Footer and Editor Wrap inherit all styles from normal mode */
 
     /* Char count style */
     .char-count {
