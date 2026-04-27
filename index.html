@@ -825,6 +825,7 @@
         <div class="compact-control">
           <div class="label-row">
             <label>07 HISTORY SNAPSHOT</label>
+            <button id="snapshotBtn" class="mini-btn" type="button" style="height: 22px; min-height: 22px; padding: 0 8px; font-size: 10px;">SNAPSHOT</button>
           </div>
           <div id="snapshotList" class="snapshot-list"></div>
         </div>
@@ -842,11 +843,11 @@
     </section>
 
     <section class="footer">
-      <button class="action-btn" id="snapshotBtn">SNAPSHOT</button>
       <button class="action-btn copy" id="copyBtn">COPY</button>
       <button class="action-btn clear" id="clearBtn">CLEAR</button>
       <button class="action-btn open" id="openBtn">OPEN</button>
-      <button class="action-btn save" id="saveBtn">SAVE</button>
+      <button class="action-btn" id="overwriteBtn">OVERWRITE</button>
+      <button class="action-btn save" id="saveBtn">SAVE AS</button>
     </section>
   </main>
 
@@ -927,6 +928,7 @@
     const paperModeBtn = document.getElementById("paperModeBtn");
     const focusModeBtn = document.getElementById("focusModeBtn");
     const snapshotBtn = document.getElementById("snapshotBtn");
+    const overwriteBtn = document.getElementById("overwriteBtn");
     const openBtn = document.getElementById("openBtn");
     const snapshotList = document.getElementById("snapshotList");
     const findInput = document.getElementById("findInput");
@@ -946,6 +948,7 @@
     
     let tabs = [];
     let activeTabId = "";
+    const activeHandles = new Map();
 
     function generateTabId() {
       return "tab_" + Date.now().toString() + Math.floor(Math.random() * 1000).toString();
@@ -1056,6 +1059,7 @@
       if ("showSaveFilePicker" in window) {
         try {
           const handle = await window.showSaveFilePicker({
+            id: 'solid-square-editor-files',
             suggestedName: filename,
             types: [
               {
@@ -1067,7 +1071,13 @@
           const writable = await handle.createWritable();
           await writable.write(editor.value);
           await writable.close();
-          setStatus(`FILE SAVED: ${filename}`);
+          const file = await handle.getFile();
+          const activeTab = tabs.find(t => t.id === activeTabId);
+          if (activeTab) {
+            activeTab.filename = file.name;
+            activeHandles.set(activeTab.id, handle);
+          }
+          setStatus(`FILE SAVED: ${file.name}`);
         } catch (error) {
           if (error && error.name === "AbortError") {
             setStatus("SAVE CANCELED");
@@ -1085,6 +1095,10 @@
       a.download = filename;
       a.click();
       URL.revokeObjectURL(url);
+      const activeTab = tabs.find(t => t.id === activeTabId);
+      if (activeTab) {
+        activeTab.filename = filename;
+      }
       setStatus(`FILE SAVED: ${filename}`);
     }
 
@@ -1237,7 +1251,12 @@
       paperModeEnabled = Boolean(loaded.paperMode);
       
       if (loaded.tabs && Array.isArray(loaded.tabs)) {
-        tabs = loaded.tabs;
+        tabs = loaded.tabs.map(t => {
+          if (typeof t.originalText === "undefined") {
+            t.originalText = t.filename ? "" : (t.text || "");
+          }
+          return t;
+        });
         activeTabId = loaded.activeTabId || (tabs.length > 0 ? tabs[0].id : null);
       } else {
         tabs = [];
@@ -1269,6 +1288,11 @@
         editor.value = newTab.text;
         editor.disabled = false;
         editor.placeholder = "ここにテキストを入力してください";
+        if (newTab.filename) {
+          setStatus(`CURRENT FILE: ${newTab.filename}`);
+        } else {
+          setStatus(`TAB SWITCHED: ${newTab.label}`);
+        }
       } else {
         editor.value = "";
         editor.disabled = true;
@@ -1291,7 +1315,7 @@
         }
       });
       const newIndex = maxNum + 1;
-      const newTab = { id: newId, label: `TAB ${String(newIndex).padStart(2, "0")}`, text: "" };
+      const newTab = { id: newId, label: `TAB ${String(newIndex).padStart(2, "0")}`, text: "", filename: null, originalText: "" };
       tabs.push(newTab);
       switchTab(newId);
     }
@@ -1300,9 +1324,16 @@
       const tabToClose = tabs.find(t => t.id === id);
       if (!tabToClose) return;
       
-      const textToClose = (id === activeTabId) ? editor.value : tabToClose.text;
-      const warning = (textToClose && textToClose.trim() !== "") ? "\n（入力内容は破棄されます）" : "";
-      if (!window.confirm(`「${tabToClose.label}」を閉じますか？${warning}`)) return;
+      if (id === activeTabId) {
+        tabToClose.text = editor.value;
+      }
+      
+      const isDirty = (tabToClose.text || "") !== (tabToClose.originalText || "");
+      
+      if (isDirty) {
+        const warning = "（保存していない変更内容は破棄されます）";
+        if (!window.confirm(`「${tabToClose.label}」に変更があります。閉じますか？\n${warning}`)) return;
+      }
 
       const index = tabs.findIndex(t => t.id === id);
       if (index === -1) return;
@@ -1356,6 +1387,72 @@
       addBtn.title = "NEW TAB";
       addBtn.addEventListener("click", addTab);
       tabStrip.appendChild(addBtn);
+
+      if (tabs.length > 1) {
+        const closeAllBtn = document.createElement("button");
+        closeAllBtn.className = "tab-add";
+        closeAllBtn.textContent = "CLEAR ALL";
+        closeAllBtn.title = "CLOSE ALL TABS";
+        closeAllBtn.style.width = "auto";
+        closeAllBtn.style.padding = "0 8px";
+        closeAllBtn.style.fontSize = "9px";
+        closeAllBtn.style.marginLeft = "8px";
+        closeAllBtn.style.borderColor = "var(--border-strong)";
+        closeAllBtn.style.color = "var(--muted)";
+        closeAllBtn.addEventListener("click", closeAllTabs);
+        
+        closeAllBtn.addEventListener("mouseover", () => {
+          closeAllBtn.style.color = "#ff6b6b";
+          closeAllBtn.style.borderColor = "#ff6b6b";
+        });
+        closeAllBtn.addEventListener("mouseout", () => {
+          closeAllBtn.style.color = "var(--muted)";
+          closeAllBtn.style.borderColor = "var(--border-strong)";
+        });
+
+        tabStrip.appendChild(closeAllBtn);
+      }
+    }
+
+    function closeAllTabs() {
+      if (tabs.length === 0) return;
+
+      const currentTab = tabs.find(t => t.id === activeTabId);
+      if (currentTab) currentTab.text = editor.value;
+
+      const dirtyTabs = tabs.filter(t => (t.text || "") !== (t.originalText || ""));
+
+      if (dirtyTabs.length > 0) {
+        let msg = "保存されていないタブがあります。すべて閉じてよろしいですか？\n\n【未保存のタブ】\n";
+        dirtyTabs.forEach(t => {
+           if (t.filename) {
+             msg += `・${t.label} (${t.filename})\n`;
+           } else {
+             msg += `・${t.label} (新規テキスト)\n`;
+           }
+        });
+        msg += "\n※これらを閉じると、変更内容はすべて失われます。";
+        
+        if (!window.confirm(msg)) {
+          return;
+        }
+      } else {
+        if (!window.confirm("すべてのタブを閉じますか？")) {
+          return;
+        }
+      }
+
+      tabs = [];
+      activeTabId = null;
+      activeHandles.clear();
+      editor.value = "";
+      editor.disabled = true;
+      editor.placeholder = "+ ボタンでタブを追加してください";
+      
+      renderTabs();
+      if (typeof updateCharCount === "function") updateCharCount();
+      saveState(activeTheme);
+      setStatus("ALL TABS CLOSED");
     }
 
     applyTheme(activeTheme);
@@ -1411,11 +1508,13 @@
 
     document.getElementById("openBtn").addEventListener("click", async () => {
       try {
-        let file, filename;
+        let file, filename, handle = null;
         if ("showOpenFilePicker" in window) {
           const [fileHandle] = await window.showOpenFilePicker({
+            id: 'solid-square-editor-files',
             types: [{ description: "Text Files", accept: { "text/plain": [".txt", ".md", ".csv", ".json", ".html", ".css", ".js"] } }]
           });
+          handle = fileHandle;
           file = await fileHandle.getFile();
           filename = file.name;
         } else {
@@ -1449,6 +1548,8 @@
         const activeTab = tabs.find(t => t.id === activeTabId);
         if (activeTab) {
           activeTab.text = text;
+          activeTab.filename = filename;
+          if (handle) activeHandles.set(activeTab.id, handle);
         }
         saveState(activeTheme);
         if (typeof updateCharCount === "function") updateCharCount();
@@ -1462,6 +1563,28 @@
 
     document.getElementById("saveBtn").addEventListener("click", () => {
       saveAsTextFile();
+    });
+
+    overwriteBtn.addEventListener("click", async () => {
+      if (!activeTabId) return;
+      const handle = activeHandles.get(activeTabId);
+      if (!handle) {
+        saveAsTextFile();
+        return;
+      }
+      try {
+        const writable = await handle.createWritable();
+        await writable.write(editor.value);
+        await writable.close();
+        setStatus(`FILE OVERWRITTEN: ${handle.name}`);
+      } catch (error) {
+        console.error(error);
+        if (error.name === 'NotAllowedError') {
+          setStatus("PERMISSION DENIED FOR OVERWRITE");
+        } else {
+          setStatus("OVERWRITE FAILED");
+        }
+      }
     });
 
     snapshotBtn.addEventListener("click", () => {
