@@ -453,6 +453,11 @@
       box-shadow: inset 0 1px 0 var(--editor-shadow-top), inset 0 -1px 0 var(--editor-shadow-bottom);
     }
 
+    textarea:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
     .footer {
       display: grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -770,18 +775,8 @@
         </select>
       </div>
 
-      <div class="control tall-control span-3">
-        <div class="label-row">
-          <label>05 THEME BANK</label>
-        </div>
-        <div class="theme-buttons">
-          <button class="theme-btn" data-theme="dark" aria-pressed="true">Dark</button>
-          <button class="theme-btn" data-theme="light" aria-pressed="false">Light</button>
-          <button class="theme-btn" data-theme="black" aria-pressed="false">Black</button>
-          <button class="theme-btn" data-theme="gray" aria-pressed="false">Gray</button>
-          <button class="theme-btn" data-theme="red" aria-pressed="false">Red</button>
-          <button class="paper-btn" id="paperModeBtn" aria-pressed="false">Paper Mode</button>
-        </div>
+      <div class="control span-3" style="padding:0; border:none; background:transparent; box-shadow:none;">
+        <button class="action-btn" id="focusModeBtn" style="width:100%; height:100%;">READING FOCUS</button>
       </div>
 
       <div class="control span-6">
@@ -793,6 +788,20 @@
           <button id="toggleCaseBtn" class="mini-btn" type="button" style="text-transform: none;">A/a</button>
           <button id="toggleZenHanBtn" class="mini-btn" type="button">半/全</button>
           <button id="toggleHiraKataBtn" class="mini-btn" type="button">あ/ア</button>
+        </div>
+      </div>
+
+      <div class="control span-3">
+        <div class="label-row">
+          <label>05 THEME BANK</label>
+        </div>
+        <div class="theme-buttons">
+          <button class="theme-btn" data-theme="dark" aria-pressed="true">Dark</button>
+          <button class="theme-btn" data-theme="light" aria-pressed="false">Light</button>
+          <button class="theme-btn" data-theme="black" aria-pressed="false">Black</button>
+          <button class="theme-btn" data-theme="gray" aria-pressed="false">Gray</button>
+          <button class="theme-btn" data-theme="red" aria-pressed="false">Red</button>
+          <button class="paper-btn" id="paperModeBtn" aria-pressed="false">Paper Mode</button>
         </div>
       </div>
 
@@ -833,10 +842,10 @@
     </section>
 
     <section class="footer">
-      <button class="action-btn" id="focusModeBtn">READING FOCUS</button>
       <button class="action-btn" id="snapshotBtn">SNAPSHOT</button>
       <button class="action-btn copy" id="copyBtn">COPY</button>
       <button class="action-btn clear" id="clearBtn">CLEAR</button>
+      <button class="action-btn open" id="openBtn">OPEN</button>
       <button class="action-btn save" id="saveBtn">SAVE</button>
     </section>
   </main>
@@ -918,6 +927,7 @@
     const paperModeBtn = document.getElementById("paperModeBtn");
     const focusModeBtn = document.getElementById("focusModeBtn");
     const snapshotBtn = document.getElementById("snapshotBtn");
+    const openBtn = document.getElementById("openBtn");
     const snapshotList = document.getElementById("snapshotList");
     const findInput = document.getElementById("findInput");
     const replaceInput = document.getElementById("replaceInput");
@@ -1226,22 +1236,28 @@
       activeTheme = loaded.theme || "dark";
       paperModeEnabled = Boolean(loaded.paperMode);
       
-      if (loaded.tabs && Array.isArray(loaded.tabs) && loaded.tabs.length > 0) {
+      if (loaded.tabs && Array.isArray(loaded.tabs)) {
         tabs = loaded.tabs;
-        activeTabId = loaded.activeTabId || tabs[0].id;
+        activeTabId = loaded.activeTabId || (tabs.length > 0 ? tabs[0].id : null);
       } else {
-        const id = generateTabId();
-        tabs = [{ id: id, label: "TAB 01", text: loaded.text || "" }];
-        activeTabId = id;
+        tabs = [];
+        activeTabId = null;
       }
     } else {
-      const id = generateTabId();
-      tabs = [{ id: id, label: "TAB 01", text: "" }];
-      activeTabId = id;
+      tabs = [];
+      activeTabId = null;
     }
     
     const initTab = tabs.find(t => t.id === activeTabId);
-    if (initTab) editor.value = initTab.text;
+    if (initTab) {
+      editor.value = initTab.text;
+      editor.disabled = false;
+      editor.placeholder = "ここにテキストを入力してください";
+    } else {
+      editor.value = "";
+      editor.disabled = true;
+      editor.placeholder = "+ ボタンでタブを追加してください";
+    }
 
     function switchTab(id) {
       if (id === activeTabId) return;
@@ -1249,16 +1265,32 @@
       if (currentTab) currentTab.text = editor.value;
       activeTabId = id;
       const newTab = tabs.find(t => t.id === activeTabId);
-      if (newTab) editor.value = newTab.text;
+      if (newTab) {
+        editor.value = newTab.text;
+        editor.disabled = false;
+        editor.placeholder = "ここにテキストを入力してください";
+      } else {
+        editor.value = "";
+        editor.disabled = true;
+        editor.placeholder = "+ ボタンでタブを追加してください";
+      }
       renderTabs();
       if (typeof updateCharCount === "function") updateCharCount();
       saveState(activeTheme);
-      editor.focus();
+      if (!editor.disabled) editor.focus();
     }
 
     function addTab() {
       const newId = generateTabId();
-      const newIndex = tabs.length + 1;
+      let maxNum = 0;
+      tabs.forEach(t => {
+        const match = t.label.match(/TAB (\d+)/);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num > maxNum) maxNum = num;
+        }
+      });
+      const newIndex = maxNum + 1;
       const newTab = { id: newId, label: `TAB ${String(newIndex).padStart(2, "0")}`, text: "" };
       tabs.push(newTab);
       switchTab(newId);
@@ -1269,24 +1301,23 @@
       if (!tabToClose) return;
       
       const textToClose = (id === activeTabId) ? editor.value : tabToClose.text;
-      if (textToClose && textToClose.trim() !== "") {
-        if (!window.confirm(`「${tabToClose.label}」を閉じますか？\n（入力内容は破棄されます）`)) return;
-      }
+      const warning = (textToClose && textToClose.trim() !== "") ? "\n（入力内容は破棄されます）" : "";
+      if (!window.confirm(`「${tabToClose.label}」を閉じますか？${warning}`)) return;
 
-      if (tabs.length <= 1) {
-        editor.value = "";
-        tabs[0].text = "";
-        saveState(activeTheme);
-        return;
-      }
-      
       const index = tabs.findIndex(t => t.id === id);
       if (index === -1) return;
       
       if (id === activeTabId) {
-        const nextActive = tabs[index > 0 ? index - 1 : index + 1];
-        activeTabId = nextActive.id;
-        editor.value = nextActive.text;
+        if (tabs.length === 1) {
+          activeTabId = null;
+          editor.value = "";
+          editor.disabled = true;
+          editor.placeholder = "+ ボタンでタブを追加してください";
+        } else {
+          const nextActive = tabs[index > 0 ? index - 1 : index + 1];
+          activeTabId = nextActive.id;
+          editor.value = nextActive.text;
+        }
       }
       tabs.splice(index, 1);
       renderTabs();
@@ -1376,6 +1407,57 @@
       editor.value = "";
       saveState(activeTheme);
       setStatus("TEXT CLEARED");
+    });
+
+    document.getElementById("openBtn").addEventListener("click", async () => {
+      try {
+        let file, filename;
+        if ("showOpenFilePicker" in window) {
+          const [fileHandle] = await window.showOpenFilePicker({
+            types: [{ description: "Text Files", accept: { "text/plain": [".txt", ".md", ".csv", ".json", ".html", ".css", ".js"] } }]
+          });
+          file = await fileHandle.getFile();
+          filename = file.name;
+        } else {
+          const input = document.createElement("input");
+          input.type = "file";
+          input.accept = "text/plain";
+          await new Promise((resolve, reject) => {
+            input.onchange = e => {
+              if (e.target.files && e.target.files[0]) {
+                file = e.target.files[0];
+                filename = file.name;
+                resolve();
+              } else {
+                reject();
+              }
+            };
+            input.click();
+          });
+        }
+        
+        if (!file) return;
+        const text = await file.text();
+        
+        if (activeTabId === null) {
+          addTab();
+        } else if (editor.value.trim() !== "") {
+          addTab();
+        }
+        
+        editor.value = text;
+        const activeTab = tabs.find(t => t.id === activeTabId);
+        if (activeTab) {
+          activeTab.text = text;
+        }
+        saveState(activeTheme);
+        if (typeof updateCharCount === "function") updateCharCount();
+        setStatus(`FILE OPENED: ${filename}`);
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          setStatus("OPEN FAILED");
+        }
+      }
     });
 
     document.getElementById("saveBtn").addEventListener("click", () => {
