@@ -1016,7 +1016,7 @@
         .replace(/\s+/g, " ")
         .replace(/[<>:"/\\|?*\u0000-\u001F]/g, "")
         .trim();
-      return (cleaned || "untitled").slice(0, 15);
+      return (cleaned || "untitled").slice(0, 30);
     }
 
     function buildSuggestedFilename() {
