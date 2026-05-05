@@ -370,6 +370,19 @@
       min-height: 0;
       border: 1px solid var(--border);
       background: var(--panel);
+      position: relative;
+    }
+
+    .editor-container {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+      gap: 0;
+      transition: gap 0.2s;
+    }
+
+    .editor-container.preview-mode {
+      gap: 16px;
     }
 
     .tab-strip {
@@ -440,7 +453,7 @@
     textarea {
       flex: 1;
       width: 100%;
-      min-height: 0; /* Allow shrinking below any default */
+      min-height: 0;
       resize: none;
       padding: 18px;
       line-height: 1.6;
@@ -451,6 +464,63 @@
       color: var(--editor-text);
       background: var(--editor-bg);
       box-shadow: inset 0 1px 0 var(--editor-shadow-top), inset 0 -1px 0 var(--editor-shadow-bottom);
+      transition: all 0.2s;
+    }
+
+    .preview-pane {
+      display: none;
+      flex: 1;
+      padding: 18px;
+      font-size: 16px;
+      line-height: 1.6;
+      border: 1px solid var(--editor-border);
+      color: var(--editor-text);
+      background: var(--editor-bg);
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+      position: relative;
+    }
+
+    .preview-mode .preview-pane {
+      display: block;
+    }
+
+    .close-preview {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.4);
+      cursor: pointer;
+      font-size: 14px;
+      z-index: 10;
+      transition: all 0.2s;
+    }
+
+    .close-preview:hover {
+      background: rgba(255, 107, 107, 0.2);
+      color: #ff6b6b;
+      border-color: #ff6b6b;
+    }
+
+    #previewContent > *:first-child,
+    #previewContent > text:first-child {
+      margin-top: 0 !important;
+    }
+
+    #previewContent p, 
+    #previewContent div, 
+    #previewContent h1, 
+    #previewContent h2, 
+    #previewContent h3 {
+      margin-bottom: 1em;
     }
 
     textarea:disabled {
@@ -723,10 +793,29 @@
         <button class="mini-btn-box" id="miniNextBtn">NEXT</button>
         <button class="mini-btn-box" id="miniReplaceBtn">SET</button>
         <div class="mini-sep"></div>
-        <button class="mini-btn-box" id="miniStripHtmlBtn" title="STRIP HTML">HTML</button>
+        <div class="mini-sep"></div>
+        <button class="mini-btn-box" id="miniAlignL" title="LEFT">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="17" y1="10" x2="3" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="17" y1="18" x2="3" y2="18"></line></svg>
+        </button>
+        <button class="mini-btn-box" id="miniAlignC" title="CENTER">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="10" x2="6" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="18" y1="18" x2="6" y2="18"></line></svg>
+        </button>
+        <button class="mini-btn-box" id="miniAlignR" title="RIGHT">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="10" x2="7" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="21" y1="18" x2="7" y2="18"></line></svg>
+        </button>
+        <div class="mini-sep"></div>
+        <button class="mini-btn-box" id="miniStripHtmlBtn" title="STRIP HTML">STRIP</button>
         <button class="mini-btn-box" id="miniToggleCaseBtn" title="UPPER / LOWER" style="text-transform: none;">A/a</button>
         <button class="mini-btn-box" id="miniToggleZenHanBtn" title="ZEN / HAN">半/全</button>
         <button class="mini-btn-box" id="miniToggleHiraKataBtn" title="HIRA / KATA">あ/ア</button>
+        <div class="mini-sep"></div>
+        <button class="mini-btn-box" id="miniHtmlModeBtn" title="HTML PASTE MODE">HTML</button>
+        <button class="mini-btn-box" id="miniTogglePreviewBtn" title="PREVIEW">MD</button>
+        <div class="mini-sep"></div>
+        <button class="mini-btn-box" id="miniCleanBtn" title="CLEAN">CLN</button>
+        <button class="mini-btn-box" id="miniUnifyBtn" title="UNIFY">UNI</button>
+        <button class="mini-btn-box" id="miniQuoteBtn" title="QUOTE">QT</button>
+        <button class="mini-btn-box" id="miniChatBtn" title="CHAT">CHT</button>
         <div class="mini-sep"></div>
         <div class="mini-dots" id="miniDots">
           <div class="mini-dot" data-theme="dark" style="background:#8ea3c7" title="Dark"></div>
@@ -762,7 +851,7 @@
         <input id="lineHeight" class="solid-slider" type="range" min="1" max="3" step="0.1" value="1.6">
       </div>
 
-      <div class="control tall-control span-3">
+      <div class="control span-3">
         <div class="label-row">
           <label for="fontFamily">04 FONT FAMILY</label>
         </div>
@@ -783,11 +872,36 @@
         <div class="label-row">
           <label>08 TRANSFORM ENGINE</label>
         </div>
-        <div class="transform-buttons">
-          <button id="stripHtmlBtn" class="mini-btn" type="button">HTML</button>
-          <button id="toggleCaseBtn" class="mini-btn" type="button" style="text-transform: none;">A/a</button>
-          <button id="toggleZenHanBtn" class="mini-btn" type="button">半/全</button>
-          <button id="toggleHiraKataBtn" class="mini-btn" type="button">あ/ア</button>
+        <div class="transform-buttons" style="grid-template-columns: repeat(5, 1fr);">
+          <button id="toggleCaseBtn" class="mini-btn" type="button" style="text-transform: none;" title="大文字/小文字切替">A/a</button>
+          <button id="toggleZenHanBtn" class="mini-btn" type="button" title="全角/半角切替">半/全</button>
+          <button id="toggleHiraKataBtn" class="mini-btn" type="button" title="ひらがな/カタカナ切替">あ/ア</button>
+          <button id="stripHtmlBtn" class="mini-btn" type="button" title="HTMLタグを除去">STRIP</button>
+          <div></div> <!-- Empty space instead of line -->
+          
+          <button id="alignLeftBtn" class="mini-btn" type="button" title="左寄せ">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="17" y1="10" x2="3" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="17" y1="18" x2="3" y2="18"></line></svg>
+          </button>
+          <button id="alignCenterBtn" class="mini-btn" type="button" title="中央寄せ">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="10" x2="6" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="18" y1="18" x2="6" y2="18"></line></svg>
+          </button>
+          <button id="alignRightBtn" class="mini-btn" type="button" title="右寄せ">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="10" x2="7" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="21" y1="18" x2="7" y2="18"></line></svg>
+          </button>
+          <button id="htmlModeBtn" class="mini-btn" type="button" title="HTMLペーストモード切替" style="color:var(--accent); border-color:var(--accent);">HTML</button>
+          <button id="togglePreviewBtn" class="mini-btn" type="button" title="Markdownプレビュー切替" style="color:var(--accent); border-color:var(--accent);">MD</button>
+        </div>
+      </div>
+
+      <div class="control span-3">
+        <div class="label-row">
+          <label>09 LINE TOOLS</label>
+        </div>
+        <div class="transform-buttons" style="grid-template-columns: repeat(2, 1fr);">
+          <button id="cleanBtn" class="mini-btn" title="空行集約とトリミング">CLEAN</button>
+          <button id="unifyBtn" class="mini-btn" title="全角スペースを半角に">UNIFY</button>
+          <button id="quoteBtn" class="mini-btn" title="各行に引用符を付与">QUOTE</button>
+          <button id="chatBtn" class="mini-btn" title="チャットログの整形">CHAT</button>
         </div>
       </div>
 
@@ -839,7 +953,10 @@
 
     <section class="panel editor-wrap">
       <div class="tab-strip" id="tabStrip"></div>
-      <textarea id="editor" placeholder="ここにテキストを入力してください"></textarea>
+      <div class="editor-container" id="editorContainer">
+        <textarea id="editor" placeholder="ここにテキストを入力してください"></textarea>
+        <div id="previewPane" class="preview-pane"><button class="close-preview" id="closePreviewBtn" title="CLOSE PREVIEW">×</button><div id="previewContent"></div></div>
+      </div>
     </section>
 
     <section class="footer">
@@ -942,6 +1059,30 @@
     const toggleZenHanBtn = document.getElementById("toggleZenHanBtn");
     const toggleHiraKataBtn = document.getElementById("toggleHiraKataBtn");
     const tabStrip = document.getElementById("tabStrip");
+    const alignLeftBtn = document.getElementById("alignLeftBtn");
+    const alignCenterBtn = document.getElementById("alignCenterBtn");
+    const alignRightBtn = document.getElementById("alignRightBtn");
+    const togglePreviewBtn = document.getElementById("togglePreviewBtn");
+    const editorContainer = document.getElementById("editorContainer");
+    const previewPane = document.getElementById("previewPane");
+    const previewContent = document.getElementById("previewContent");
+    const closePreviewBtn = document.getElementById("closePreviewBtn");
+    
+    const cleanBtn = document.getElementById("cleanBtn");
+    const unifyBtn = document.getElementById("unifyBtn");
+    const quoteBtn = document.getElementById("quoteBtn");
+    const chatBtn = document.getElementById("chatBtn");
+    const miniAlignL = document.getElementById("miniAlignL");
+    const miniAlignC = document.getElementById("miniAlignC");
+    const miniAlignR = document.getElementById("miniAlignR");
+    const miniCleanBtn = document.getElementById("miniCleanBtn");
+    const miniUnifyBtn = document.getElementById("miniUnifyBtn");
+    const miniQuoteBtn = document.getElementById("miniQuoteBtn");
+    const miniChatBtn = document.getElementById("miniChatBtn");
+    const htmlModeBtn = document.getElementById("htmlModeBtn");
+    const miniHtmlModeBtn = document.getElementById("miniHtmlModeBtn");
+    const miniTogglePreviewBtn = document.getElementById("miniTogglePreviewBtn");
+    let isHtmlMode = false;
     const STORAGE_KEY = "solid-square-editor-state-v3";
     const snapshots = [];
     let findCursor = 0;
@@ -1177,7 +1318,31 @@
     }
 
     function stripHtml(text) {
-      return text.replace(/<\/?[^>]+(>|$)/g, "");
+      const div = document.createElement("div");
+      
+      // Must append to DOM to get accurate visual text rendering from innerText
+      div.style.position = "fixed";
+      div.style.left = "-9999px";
+      div.style.whiteSpace = "pre-wrap";
+      div.style.width = "1000px"; // Give it some width
+      document.body.appendChild(div);
+      
+      div.innerHTML = text;
+
+      // Manually ensure some structural tags have spacing if the browser logic is too tight
+      div.querySelectorAll("p, div, li, tr, h1, h2, h3, h4").forEach((el, idx) => {
+        el.style.display = "block"; // Force block display
+        // Only add top margin if it's NOT the first element to avoid leading newlines
+        el.style.marginTop = idx === 0 ? "0" : "1em";
+        el.style.marginBottom = "1em";
+      });
+      
+      div.querySelectorAll("br").forEach(br => br.after("\n"));
+
+      const clean = div.innerText.replace(/\n{3,}/g, "\n\n").trim();
+      
+      document.body.removeChild(div);
+      return clean;
     }
 
     function toggleCase(text) {
@@ -1209,6 +1374,103 @@
         var chr = match.charCodeAt(0) - 0x60;
         return String.fromCharCode(chr);
       });
+    }
+
+    function cleanText(text) {
+      // Consolidate 2+ empty lines to 1, and trim each line
+      return text.split(/\r?\n/)
+        .map(line => line.trim())
+        .join("\n")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+    }
+
+    function unifySpaces(text) {
+      // Unify full-width and half-width spaces to half-width
+      return text.replace(/　/g, " ");
+    }
+
+    function quoteText(text) {
+      const lines = text.split(/\r?\n/);
+      if (lines.length === 0) return text;
+      
+      // Toggle logic: if all non-empty lines start with > , remove it.
+      // Otherwise, add it.
+      const nonEmptyLines = lines.filter(l => l.trim() !== "");
+      const allQuoted = nonEmptyLines.length > 0 && nonEmptyLines.every(l => l.startsWith("> "));
+      
+      if (allQuoted) {
+        return lines.map(l => l.startsWith("> ") ? l.slice(2) : l).join("\n");
+      } else {
+        return lines.map(l => l.startsWith("> ") ? l : `> ${l}`).join("\n");
+      }
+    }
+
+    function cleanupChat(text) {
+      // If the text appears to be HTML source, clean it first
+      // using the same logic as the HTML button (preserving line breaks)
+      if (text.includes("<") && text.includes(">")) {
+        text = stripHtml(text);
+      }
+
+      // Simple chat cleanup logic:
+      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l !== "");
+      const result = [];
+      
+      // Pattern: [Time] Name \n Message OR Time \n Name \n Message
+      // This is a simplified heuristic. We look for timestamps or just group 3-line blocks.
+      const timeRegex = /^(\d{1,2}:\d{2}|\[\d{1,2}:\d{2}\])/;
+      
+      let i = 0;
+      while (i < lines.length) {
+        if (timeRegex.test(lines[i])) {
+          // Case 1: [Time] Name \n Message
+          // Check if lines[i] has both time and name
+          const parts = lines[i].split(/\s+/);
+          if (parts.length >= 2) {
+            const time = parts[0];
+            const name = parts.slice(1).join(" ");
+            const body = lines[i+1] || "";
+            result.push(`[${time.replace(/[\[\]]/g, "")}] ${name}: ${body}`);
+            i += 2;
+          } else {
+            // Case 2: Time \n Name \n Message
+            const time = lines[i];
+            const name = lines[i+1] || "Unknown";
+            const body = lines[i+2] || "";
+            result.push(`[${time.replace(/[\[\]]/g, "")}] ${name}: ${body}`);
+            i += 3;
+          }
+        } else {
+          result.push(lines[i]);
+          i++;
+        }
+      }
+      return result.join("\n");
+    }
+
+    function updatePreview() {
+      // Render as HTML to support the "HTML state" the user wants to see in preview
+      previewContent.innerHTML = editor.value;
+    }
+
+    function cleanPastedHtml(html) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, "text/html");
+      const toRemove = doc.querySelectorAll("script, style, meta, link, title, head");
+      toRemove.forEach(el => el.remove());
+      
+      const all = doc.body.querySelectorAll("*");
+      all.forEach(el => {
+        // Keep only structural attributes if any, but mostly we want to strip the noise
+        const attrNames = Array.from(el.attributes).map(a => a.name);
+        attrNames.forEach(name => {
+          // Keep nothing for now to keep it clean, but the tags remain
+          el.removeAttribute(name);
+        });
+      });
+      
+      return doc.body.innerHTML;
     }
 
     function saveState(themeName) {
@@ -1491,6 +1753,61 @@
       saveState(activeTheme);
     });
 
+    editor.addEventListener("paste", (e) => {
+      const html = e.clipboardData.getData("text/html");
+      if (html) {
+        e.preventDefault();
+        
+        let content = "";
+        if (isHtmlMode) {
+          // Paste as raw HTML source
+          content = cleanPastedHtml(html);
+          setStatus("PASTED AS HTML SOURCE");
+        } else {
+          // Default paste is "Clean Text"
+          content = stripHtml(html);
+          setStatus("PASTED AS CLEAN TEXT");
+        }
+        
+        const start = editor.selectionStart;
+        const end = editor.selectionEnd;
+        const text = editor.value;
+        
+        editor.value = text.slice(0, start) + content + text.slice(end);
+        editor.selectionStart = editor.selectionEnd = start + content.length;
+        
+        saveState(activeTheme);
+        updateCharCount();
+        if (editorContainer.classList.contains("preview-mode")) updatePreview();
+      }
+    });
+
+    function toggleHtmlMode() {
+      isHtmlMode = !isHtmlMode;
+      const btns = [htmlModeBtn, miniHtmlModeBtn];
+      btns.forEach(btn => {
+        if (isHtmlMode) {
+          btn.style.background = "var(--accent)";
+          btn.style.color = "#000";
+        } else {
+          btn.style.background = "transparent";
+          btn.style.color = "var(--accent)";
+        }
+      });
+      setStatus(isHtmlMode ? "HTML PASTE MODE: ON" : "HTML PASTE MODE: OFF");
+    }
+
+    htmlModeBtn.addEventListener("click", toggleHtmlMode);
+    miniHtmlModeBtn.addEventListener("click", toggleHtmlMode);
+
+    closePreviewBtn.addEventListener("click", () => {
+      editorContainer.classList.remove("preview-mode");
+      togglePreviewBtn.setAttribute("aria-pressed", "false");
+      togglePreviewBtn.style.background = "transparent";
+      togglePreviewBtn.style.color = "var(--accent)";
+      setStatus("PREVIEW CLOSED");
+    });
+
     document.getElementById("copyBtn").addEventListener("click", async () => {
       try {
         await navigator.clipboard.writeText(editor.value);
@@ -1612,13 +1929,50 @@
     toggleZenHanBtn.addEventListener("click", () => transformText(toggleZenHan));
     toggleHiraKataBtn.addEventListener("click", () => transformText(toggleHiraKata));
 
+    alignLeftBtn.addEventListener("click", () => {
+      editor.style.textAlign = "left";
+      setStatus("ALIGN: LEFT");
+    });
+    alignCenterBtn.addEventListener("click", () => {
+      editor.style.textAlign = "center";
+      setStatus("ALIGN: CENTER");
+    });
+    alignRightBtn.addEventListener("click", () => {
+      editor.style.textAlign = "right";
+      setStatus("ALIGN: RIGHT");
+    });
+
+    cleanBtn.addEventListener("click", () => transformText(cleanText));
+    unifyBtn.addEventListener("click", () => transformText(unifySpaces));
+    quoteBtn.addEventListener("click", () => transformText(quoteText));
+    chatBtn.addEventListener("click", () => transformText(cleanupChat));
+
+    togglePreviewBtn.addEventListener("click", () => {
+      const isPreview = editorContainer.classList.toggle("preview-mode");
+      togglePreviewBtn.setAttribute("aria-pressed", String(isPreview));
+      if (isPreview) {
+        updatePreview();
+        togglePreviewBtn.style.background = "var(--accent)";
+        togglePreviewBtn.style.color = "#000";
+      } else {
+        togglePreviewBtn.style.background = "transparent";
+        togglePreviewBtn.style.color = "var(--accent)";
+      }
+      setStatus(isPreview ? "PREVIEW MODE: ON" : "PREVIEW MODE: OFF");
+    });
+
     // --- Character Count Logic ---
     const charCountEl = document.getElementById("charCount");
     function updateCharCount() {
       const len = editor.value.length;
       charCountEl.textContent = `CHARS: ${len.toLocaleString()}`;
     }
-    editor.addEventListener("input", updateCharCount);
+    editor.addEventListener("input", () => {
+      updateCharCount();
+      if (editorContainer.classList.contains("preview-mode")) {
+        updatePreview();
+      }
+    });
     updateCharCount();
 
     // --- Mini Strip Logic ---
@@ -1651,6 +2005,24 @@
     miniToggleCaseBtn.addEventListener("click", () => transformText(toggleCase));
     miniToggleZenHanBtn.addEventListener("click", () => transformText(toggleZenHan));
     miniToggleHiraKataBtn.addEventListener("click", () => transformText(toggleHiraKata));
+    miniAlignL.addEventListener("click", () => {
+      editor.style.textAlign = "left";
+      setStatus("ALIGN: LEFT");
+    });
+    miniAlignC.addEventListener("click", () => {
+      editor.style.textAlign = "center";
+      setStatus("ALIGN: CENTER");
+    });
+    miniAlignR.addEventListener("click", () => {
+      editor.style.textAlign = "right";
+      setStatus("ALIGN: RIGHT");
+    });
+    miniCleanBtn.addEventListener("click", () => transformText(cleanText));
+    miniUnifyBtn.addEventListener("click", () => transformText(unifySpaces));
+    miniQuoteBtn.addEventListener("click", () => transformText(quoteText));
+    miniChatBtn.addEventListener("click", () => transformText(cleanupChat));
+    miniTogglePreviewBtn.addEventListener("click", () => togglePreviewBtn.click());
+
     miniExitBtn.addEventListener("click", () => {
        document.body.classList.remove("minimum-mode");
        focusModeBtn.textContent = "READING FOCUS";
