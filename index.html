@@ -1138,10 +1138,19 @@
       const size = Number(fontSize.value);
       const weight = Number(fontWeight.value);
       const lh = Number(lineHeight.value);
+      const family = fontFamily.value;
+
       editor.style.fontSize = `${size}px`;
       editor.style.fontWeight = String(weight);
       editor.style.lineHeight = String(lh);
-      editor.style.fontFamily = fontFamily.value;
+      editor.style.fontFamily = family;
+
+      // Reflect in preview
+      previewContent.style.fontSize = `${size}px`;
+      previewContent.style.fontWeight = String(weight);
+      previewContent.style.lineHeight = String(lh);
+      previewContent.style.fontFamily = family;
+
       fontSizeValue.textContent = `${size}px`;
       fontWeightValue.textContent = String(weight);
       lineHeightValue.textContent = lh.toFixed(1);
@@ -1931,14 +1940,17 @@
 
     alignLeftBtn.addEventListener("click", () => {
       editor.style.textAlign = "left";
+      previewContent.style.textAlign = "left";
       setStatus("ALIGN: LEFT");
     });
     alignCenterBtn.addEventListener("click", () => {
       editor.style.textAlign = "center";
+      previewContent.style.textAlign = "center";
       setStatus("ALIGN: CENTER");
     });
     alignRightBtn.addEventListener("click", () => {
       editor.style.textAlign = "right";
+      previewContent.style.textAlign = "right";
       setStatus("ALIGN: RIGHT");
     });
 
@@ -2007,14 +2019,17 @@
     miniToggleHiraKataBtn.addEventListener("click", () => transformText(toggleHiraKata));
     miniAlignL.addEventListener("click", () => {
       editor.style.textAlign = "left";
+      previewContent.style.textAlign = "left";
       setStatus("ALIGN: LEFT");
     });
     miniAlignC.addEventListener("click", () => {
       editor.style.textAlign = "center";
+      previewContent.style.textAlign = "center";
       setStatus("ALIGN: CENTER");
     });
     miniAlignR.addEventListener("click", () => {
       editor.style.textAlign = "right";
+      previewContent.style.textAlign = "right";
       setStatus("ALIGN: RIGHT");
     });
     miniCleanBtn.addEventListener("click", () => transformText(cleanText));
