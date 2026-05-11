@@ -1,0 +1,2065 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#121212">
+  <meta name="description" content="スクエアでソリッドなPWAテキストエディタ">
+  <link rel="manifest" href="./manifest.json">
+  <title>Solid Square Editor</title>
+  <style>
+    :root {
+      --bg: #121212;
+      --panel: #1b1b1b;
+      --surface: #232323;
+      --surface-2: #1f1f1f;
+      --text: #ececec;
+      --muted: #9b9b9b;
+      --accent: #8ea3c7;
+      --control-accent: #8ea3c7;
+      --border: #303030;
+      --border-strong: #434343;
+      --title-font: "JetBrains Mono", "Consolas", "SFMono-Regular", "Meiryo", monospace;
+      --ui-font: system-ui, -apple-system, "Segoe UI", Meiryo, sans-serif;
+      --editor-bg: #171717;
+      --editor-text: #f0f0f0;
+      --editor-border: #363636;
+      --editor-shadow-top: rgba(255, 255, 255, 0.02);
+      --editor-shadow-bottom: rgba(0, 0, 0, 0.45);
+    }
+
+    * {
+      box-sizing: border-box;
+      border-radius: 0;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden; /* Prevent window-level scrollbar */
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--ui-font);
+    }
+
+    .app {
+      width: min(1320px, 100%);
+      height: 100%; /* Lock to viewport height */
+      margin: 0 auto;
+      padding: 24px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 18px;
+      transition: grid-template-rows 160ms linear;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02), inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+    }
+
+    .toolbar {
+      padding: 16px;
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 14px;
+      align-items: start;
+      transition: opacity 140ms linear, max-height 180ms linear, padding 180ms linear, margin 180ms linear;
+    }
+
+    .title-strip {
+      grid-column: span 12;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 4px;
+    }
+
+    .title-main {
+      font-family: var(--title-font);
+      font-size: 16px;
+      letter-spacing: 0.08em;
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .title-sub {
+      font-family: var(--title-font);
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .control {
+      min-width: 0;
+      display: grid;
+      gap: 8px;
+      padding: 10px 10px 12px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2);
+    }
+
+    .label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: var(--title-font);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .value {
+      color: var(--control-accent);
+      font-weight: 700;
+    }
+
+    .full {
+      grid-column: span 12;
+    }
+
+    .span-2 {
+      grid-column: span 2;
+    }
+
+    .span-3 {
+      grid-column: span 3;
+    }
+
+    .span-5 {
+      grid-column: span 5;
+    }
+
+    .span-6 {
+      grid-column: span 6;
+    }
+
+    .tall-control {
+      grid-row: span 2;
+    }
+
+    select,
+    button,
+    textarea,
+    input[type="range"] {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      outline: none;
+    }
+
+    .solid-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 16px;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .solid-slider::-webkit-slider-runnable-track {
+      height: 2px;
+      background: var(--border-strong);
+      border: 0;
+    }
+
+    .solid-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 12px;
+      height: 12px;
+      background: var(--control-accent);
+      border: 1px solid var(--border);
+      margin-top: -5px;
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.45);
+    }
+
+    .solid-slider::-moz-range-track {
+      height: 2px;
+      background: var(--border-strong);
+      border: 0;
+    }
+
+    .solid-slider::-moz-range-thumb {
+      width: 12px;
+      height: 12px;
+      border: 1px solid var(--border);
+      background: var(--control-accent);
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.45);
+    }
+
+    select {
+      height: 38px;
+      font-family: var(--title-font);
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      padding: 6px 8px;
+      text-transform: uppercase;
+    }
+
+    .theme-buttons {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .theme-btn {
+      height: 36px;
+      font-family: var(--title-font);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      text-transform: uppercase;
+      box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.02);
+    }
+
+    .theme-btn:hover,
+    .theme-btn[aria-pressed="true"] {
+      background: var(--control-accent);
+      color: #120c0c;
+      border-color: var(--control-accent);
+    }
+
+    .paper-btn {
+      height: 36px;
+      font-family: var(--title-font);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      border: 1px solid var(--border-strong);
+      cursor: pointer;
+      box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.02);
+    }
+
+    .paper-btn[aria-pressed="true"] {
+      background: #f3f3f3;
+      color: #161616;
+      border-color: #f3f3f3;
+    }
+
+    .status {
+      margin-top: 2px;
+      font-family: var(--title-font);
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      min-height: 18px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      padding: 7px 10px;
+    }
+
+    .utility-row {
+      grid-column: span 12;
+      display: grid;
+      grid-template-columns: 3fr 2fr;
+      gap: 14px;
+    }
+
+    .compact-control {
+      min-width: 0;
+      display: grid;
+      gap: 8px;
+      padding: 10px 10px 12px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2);
+    }
+
+    /* search-row: [FIND INPUT] [REPLACE INPUT] [NEXT] [REPLACE] [REPLACE ALL] */
+    .search-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto auto auto;
+      gap: 6px;
+      align-items: center;
+    }
+
+    /* ALL CLEAR は下段に単独配置 */
+    .search-clear-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 6px;
+    }
+
+    .tool-input {
+      height: 34px;
+      padding: 6px 8px;
+      font-family: var(--title-font);
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+    }
+
+    .mini-btn {
+      min-height: 34px;
+      padding: 0 10px;
+      font-family: var(--title-font);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+      text-transform: uppercase;
+      cursor: pointer;
+      border: 1px solid var(--border-strong);
+      background: var(--surface);
+      color: var(--text);
+      box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.02);
+    }
+
+    .mini-btn:hover {
+      background: var(--control-accent);
+      color: #120f0f;
+      border-color: var(--control-accent);
+    }
+
+    .snapshot-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-height: 34px;
+      align-content: flex-start;
+    }
+
+    .snapshot-item {
+      min-height: 30px;
+      padding: 0 8px;
+      font-family: var(--title-font);
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      text-transform: uppercase;
+    }
+
+    .snapshot-item:hover {
+      border-color: var(--control-accent);
+      color: var(--control-accent);
+    }
+
+    .all-clear-btn:hover {
+      background: #6a6a6a;
+      border-color: #6a6a6a;
+      color: #f2f2f2;
+    }
+
+    .transform-buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+
+    .editor-wrap {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-height: 0;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      position: relative;
+    }
+
+    .editor-container {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+      gap: 0;
+      transition: gap 0.2s;
+    }
+
+    .editor-container.preview-mode {
+      gap: 16px;
+    }
+
+    .tab-strip {
+      display: flex;
+      gap: 4px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      flex-shrink: 0;
+    }
+    .tab-strip::-webkit-scrollbar {
+      display: none;
+    }
+    .tab-item {
+      display: flex;
+      align-items: center;
+      height: 24px;
+      padding: 0 8px;
+      font-family: var(--title-font);
+      font-size: 10px;
+      letter-spacing: 0.05em;
+      border: 1px solid var(--border-strong);
+      background: var(--surface);
+      color: var(--muted);
+      cursor: pointer;
+      box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.02);
+      white-space: nowrap;
+    }
+    .tab-item:hover {
+      color: var(--text);
+      background: var(--surface-2);
+    }
+    .tab-item[aria-selected="true"] {
+      color: var(--text);
+      border-color: var(--control-accent);
+      background: var(--bg);
+      font-weight: 700;
+      box-shadow: inset 0 1px 0 var(--control-accent);
+    }
+    .tab-close {
+      margin-left: 6px;
+      font-size: 12px;
+      opacity: 0.5;
+      padding: 0 2px;
+    }
+    .tab-close:hover {
+      opacity: 1;
+      color: #ff6b6b;
+    }
+    .tab-add {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 24px;
+      width: 24px;
+      font-family: var(--title-font);
+      font-size: 14px;
+      border: 1px dashed var(--border-strong);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .tab-add:hover {
+      border-color: var(--control-accent);
+      color: var(--control-accent);
+    }
+
+    textarea {
+      flex: 1;
+      width: 100%;
+      min-height: 0;
+      resize: none;
+      padding: 18px;
+      line-height: 1.6;
+      font-size: 16px;
+      font-weight: 400;
+      font-family: Meiryo, sans-serif;
+      border: 1px solid var(--editor-border);
+      color: var(--editor-text);
+      background: var(--editor-bg);
+      box-shadow: inset 0 1px 0 var(--editor-shadow-top), inset 0 -1px 0 var(--editor-shadow-bottom);
+      transition: all 0.2s;
+    }
+
+    .preview-pane {
+      display: none;
+      flex: 1;
+      padding: 18px;
+      font-size: 16px;
+      line-height: 1.6;
+      border: 1px solid var(--editor-border);
+      color: var(--editor-text);
+      background: var(--editor-bg);
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+      position: relative;
+    }
+
+    .preview-mode .preview-pane {
+      display: block;
+    }
+
+    .close-preview {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.4);
+      cursor: pointer;
+      font-size: 14px;
+      z-index: 10;
+      transition: all 0.2s;
+    }
+
+    .close-preview:hover {
+      background: rgba(255, 107, 107, 0.2);
+      color: #ff6b6b;
+      border-color: #ff6b6b;
+    }
+
+    #previewContent > *:first-child,
+    #previewContent > text:first-child {
+      margin-top: 0 !important;
+    }
+
+    #previewContent p, 
+    #previewContent div, 
+    #previewContent h1, 
+    #previewContent h2, 
+    #previewContent h3 {
+      margin-bottom: 1em;
+    }
+
+    textarea:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .footer {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .action-btn {
+      min-height: 56px;
+      font-family: var(--title-font);
+      font-size: 13px;
+      letter-spacing: 0.12em;
+      font-weight: 700;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.02);
+      border-color: var(--border-strong);
+      color: var(--text);
+    }
+
+    .action-btn:active {
+      box-shadow: inset 0 2px 0 rgba(0, 0, 0, 0.5), inset 0 -1px 0 rgba(255, 255, 255, 0.02);
+      transform: translateY(1px);
+    }
+
+    .action-btn:hover {
+      background: var(--control-accent);
+      color: #160d0d;
+      border-color: var(--control-accent);
+    }
+
+    body.focus-mode .app {
+      grid-template-rows: 1fr auto;
+    }
+
+    /* ─── MINIMUM MODE (evolved focus) ─── */
+    .mini-strip {
+      display: none; /* Hidden by default */
+      grid-column: span 12;
+      align-items: center;
+      gap: 12px;
+      height: 28px;
+      padding: 0 4px;
+      margin-top: -4px;
+      overflow: hidden;
+    }
+
+    .mini-sep {
+      width: 1px;
+      height: 14px;
+      background: var(--border-strong);
+      opacity: 0.5;
+    }
+
+    .mini-label {
+      font-family: var(--title-font);
+      font-size: 9px;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .mini-value {
+      font-family: var(--title-font);
+      font-size: 10px;
+      color: var(--control-accent);
+      font-weight: 700;
+    }
+
+    .mini-input {
+      height: 20px;
+      padding: 0 6px;
+      font-family: var(--title-font);
+      font-size: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      outline: none;
+      min-width: 0; /* Allow shrinking */
+      flex: 1;      /* Grow within limits */
+      max-width: 120px;
+    }
+
+    .mini-btn-box {
+      height: 20px;
+      padding: 0 8px;
+      font-family: var(--title-font);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      border: 1px solid var(--border-strong);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .mini-btn-box:hover {
+      background: var(--control-accent);
+      color: #121212;
+    }
+
+    .mini-dots {
+      display: flex;
+      gap: 5px;
+    }
+
+    .mini-dot {
+      width: 8px;
+      height: 8px;
+      border: 1px solid rgba(255,255,255,0.2);
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+
+    .mini-dot:hover {
+      transform: scale(1.4);
+    }
+
+    .mini-dot[aria-pressed="true"] {
+      border-color: var(--text);
+      box-shadow: 0 0 4px var(--control-accent);
+    }
+
+    .mini-exit {
+      margin-left: auto;
+      color: var(--text);
+      border-color: var(--border-strong);
+    }
+
+    .mini-exit:hover {
+      background: #5a5a5a;
+      color: #fff;
+    }
+
+    /* Layout override for MINIMUM MODE */
+    body.minimum-mode .app {
+      grid-template-rows: auto 1fr auto;
+    }
+
+    body.minimum-mode .toolbar {
+      padding: 16px;
+      gap: 0;
+    }
+
+    body.minimum-mode .title-strip {
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 4px;
+    }
+
+    body.minimum-mode .toolbar .control,
+    body.minimum-mode .toolbar .utility-row,
+    body.minimum-mode .status-row {
+       display: none;
+    }
+
+    body.minimum-mode .mini-strip {
+      display: flex;
+      margin-top: 4px;
+    }
+
+    body.minimum-mode textarea {
+      height: 100%;
+    }
+
+    /* Footer and Editor Wrap inherit all styles from normal mode */
+
+    /* Char count style */
+    .char-count {
+      font-family: var(--title-font);
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+    }
+
+    .status-row {
+      grid-column: span 12;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    @media (max-width: 1100px) {
+      .tall-control {
+        grid-row: auto;
+      }
+
+      .span-2,
+      .span-3,
+      .span-5,
+      .span-6 {
+        grid-column: span 6;
+      }
+
+      .theme-buttons {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .utility-row {
+        grid-template-columns: 1fr;
+      }
+
+      .transform-buttons {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .search-row {
+        grid-template-columns: 1fr 1fr auto auto auto;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .app {
+        padding: 14px;
+        gap: 12px;
+      }
+
+      .toolbar,
+      .editor-wrap {
+        padding: 12px;
+      }
+
+      .span-2,
+      .span-3,
+      .span-5,
+      .span-6 {
+        grid-column: span 12;
+      }
+
+      .theme-buttons {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .transform-buttons {
+        grid-template-columns: 1fr;
+      }
+
+      .footer {
+        grid-template-columns: 1fr;
+      }
+
+      textarea {
+        padding: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="panel toolbar">
+      <div class="title-strip">
+        <div class="title-main">SOLID SQUARE EDITOR</div>
+        <div class="title-sub">Studio Control Surface</div>
+      </div>
+
+      <!-- MINI HUD STRIP -->
+      <div class="mini-strip" id="miniStrip">
+        <span class="mini-label">SIZE</span>
+        <span class="mini-value" id="miniSizeVal">16PX</span>
+        <div class="mini-sep"></div>
+        <input type="text" id="miniFind" class="mini-input" placeholder="FIND">
+        <input type="text" id="miniReplace" class="mini-input" placeholder="REP">
+        <button class="mini-btn-box" id="miniNextBtn">NEXT</button>
+        <button class="mini-btn-box" id="miniReplaceBtn">SET</button>
+        <div class="mini-sep"></div>
+        <div class="mini-sep"></div>
+        <button class="mini-btn-box" id="miniAlignL" title="LEFT">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="17" y1="10" x2="3" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="17" y1="18" x2="3" y2="18"></line></svg>
+        </button>
+        <button class="mini-btn-box" id="miniAlignC" title="CENTER">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="10" x2="6" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="18" y1="18" x2="6" y2="18"></line></svg>
+        </button>
+        <button class="mini-btn-box" id="miniAlignR" title="RIGHT">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="10" x2="7" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="21" y1="18" x2="7" y2="18"></line></svg>
+        </button>
+        <div class="mini-sep"></div>
+        <button class="mini-btn-box" id="miniStripHtmlBtn" title="STRIP HTML">STRIP</button>
+        <button class="mini-btn-box" id="miniToggleCaseBtn" title="UPPER / LOWER" style="text-transform: none;">A/a</button>
+        <button class="mini-btn-box" id="miniToggleZenHanBtn" title="ZEN / HAN">半/全</button>
+        <button class="mini-btn-box" id="miniToggleHiraKataBtn" title="HIRA / KATA">あ/ア</button>
+        <div class="mini-sep"></div>
+        <button class="mini-btn-box" id="miniHtmlModeBtn" title="HTML PASTE MODE">HTML</button>
+        <button class="mini-btn-box" id="miniTogglePreviewBtn" title="PREVIEW">MD</button>
+        <div class="mini-sep"></div>
+        <button class="mini-btn-box" id="miniCleanBtn" title="CLEAN">CLN</button>
+        <button class="mini-btn-box" id="miniUnifyBtn" title="UNIFY">UNI</button>
+        <button class="mini-btn-box" id="miniQuoteBtn" title="QUOTE">QT</button>
+        <button class="mini-btn-box" id="miniChatBtn" title="CHAT">CHT</button>
+        <div class="mini-sep"></div>
+        <div class="mini-dots" id="miniDots">
+          <div class="mini-dot" data-theme="dark" style="background:#8ea3c7" title="Dark"></div>
+          <div class="mini-dot" data-theme="light" style="background:#e8edf7" title="Light"></div>
+          <div class="mini-dot" data-theme="black" style="background:#5a5a5a" title="Black"></div>
+          <div class="mini-dot" data-theme="gray" style="background:#b0b8c4" title="Gray"></div>
+          <div class="mini-dot" data-theme="red" style="background:#c5aa88" title="Red"></div>
+        </div>
+        <button class="mini-btn-box mini-exit" id="miniExitBtn">EXIT FOCUS</button>
+      </div>
+
+      <div class="control span-2">
+        <div class="label-row">
+          <label for="fontSize">01 SIZE</label>
+          <span class="value" id="fontSizeValue">16px</span>
+        </div>
+        <input id="fontSize" class="solid-slider" type="range" min="8" max="200" step="1" value="16">
+      </div>
+
+      <div class="control span-2">
+        <div class="label-row">
+          <label for="fontWeight">02 WEIGHT</label>
+          <span class="value" id="fontWeightValue">400</span>
+        </div>
+        <input id="fontWeight" class="solid-slider" type="range" min="100" max="900" step="100" value="400">
+      </div>
+
+      <div class="control span-2">
+        <div class="label-row">
+          <label for="lineHeight">03 LEADING</label>
+          <span class="value" id="lineHeightValue">1.6</span>
+        </div>
+        <input id="lineHeight" class="solid-slider" type="range" min="1" max="3" step="0.1" value="1.6">
+      </div>
+
+      <div class="control span-3">
+        <div class="label-row">
+          <label for="fontFamily">04 FONT FAMILY</label>
+        </div>
+        <select id="fontFamily">
+          <option value="Meiryo, sans-serif">MEIRYO</option>
+          <option value="'MS Gothic', monospace">MS GOTHIC</option>
+          <option value="system-ui, sans-serif">SYSTEM UI</option>
+          <option value="'Yu Gothic UI', sans-serif">YU GOTHIC UI</option>
+          <option value="'Consolas', monospace">CONSOLAS</option>
+        </select>
+      </div>
+
+      <div class="control span-3" style="padding:0; border:none; background:transparent; box-shadow:none;">
+        <button class="action-btn" id="focusModeBtn" style="width:100%; height:100%;">READING FOCUS</button>
+      </div>
+
+      <div class="control span-6">
+        <div class="label-row">
+          <label>08 TRANSFORM ENGINE</label>
+        </div>
+        <div class="transform-buttons" style="grid-template-columns: repeat(5, 1fr);">
+          <button id="toggleCaseBtn" class="mini-btn" type="button" style="text-transform: none;" title="大文字/小文字切替">A/a</button>
+          <button id="toggleZenHanBtn" class="mini-btn" type="button" title="全角/半角切替">半/全</button>
+          <button id="toggleHiraKataBtn" class="mini-btn" type="button" title="ひらがな/カタカナ切替">あ/ア</button>
+          <button id="stripHtmlBtn" class="mini-btn" type="button" title="HTMLタグを除去">STRIP</button>
+          <div></div> <!-- Empty space instead of line -->
+          
+          <button id="alignLeftBtn" class="mini-btn" type="button" title="左寄せ">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="17" y1="10" x2="3" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="17" y1="18" x2="3" y2="18"></line></svg>
+          </button>
+          <button id="alignCenterBtn" class="mini-btn" type="button" title="中央寄せ">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="10" x2="6" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="18" y1="18" x2="6" y2="18"></line></svg>
+          </button>
+          <button id="alignRightBtn" class="mini-btn" type="button" title="右寄せ">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="10" x2="7" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="21" y1="18" x2="7" y2="18"></line></svg>
+          </button>
+          <button id="htmlModeBtn" class="mini-btn" type="button" title="HTMLペーストモード切替" style="color:var(--accent); border-color:var(--accent);">HTML</button>
+          <button id="togglePreviewBtn" class="mini-btn" type="button" title="Markdownプレビュー切替" style="color:var(--accent); border-color:var(--accent);">MD</button>
+        </div>
+      </div>
+
+      <div class="control span-3">
+        <div class="label-row">
+          <label>09 LINE TOOLS</label>
+        </div>
+        <div class="transform-buttons" style="grid-template-columns: repeat(2, 1fr);">
+          <button id="cleanBtn" class="mini-btn" title="空行集約とトリミング">CLEAN</button>
+          <button id="unifyBtn" class="mini-btn" title="全角スペースを半角に">UNIFY</button>
+          <button id="quoteBtn" class="mini-btn" title="各行に引用符を付与">QUOTE</button>
+          <button id="chatBtn" class="mini-btn" title="チャットログの整形">CHAT</button>
+        </div>
+      </div>
+
+      <div class="control span-3">
+        <div class="label-row">
+          <label>05 THEME BANK</label>
+        </div>
+        <div class="theme-buttons">
+          <button class="theme-btn" data-theme="dark" aria-pressed="true">Dark</button>
+          <button class="theme-btn" data-theme="light" aria-pressed="false">Light</button>
+          <button class="theme-btn" data-theme="black" aria-pressed="false">Black</button>
+          <button class="theme-btn" data-theme="gray" aria-pressed="false">Gray</button>
+          <button class="theme-btn" data-theme="red" aria-pressed="false">Red</button>
+          <button class="paper-btn" id="paperModeBtn" aria-pressed="false">Paper Mode</button>
+        </div>
+      </div>
+
+      <div class="utility-row">
+        <div class="compact-control">
+          <div class="label-row">
+            <label>06 FIND / REPLACE</label>
+          </div>
+          <div class="search-row">
+            <input id="findInput" class="tool-input" type="text" placeholder="FIND KEYWORD">
+            <input id="replaceInput" class="tool-input" type="text" placeholder="REPLACE VALUE">
+            <button id="findNextBtn" class="mini-btn" type="button">NEXT</button>
+            <button id="replaceOneBtn" class="mini-btn" type="button">REPLACE</button>
+            <button id="replaceAllBtn" class="mini-btn" type="button">REPLACE ALL</button>
+          </div>
+          <div class="search-clear-row">
+            <button id="allClearBtn" class="mini-btn all-clear-btn" type="button">ALL CLEAR</button>
+          </div>
+        </div>
+
+        <div class="compact-control">
+          <div class="label-row">
+            <label>07 HISTORY SNAPSHOT</label>
+            <button id="snapshotBtn" class="mini-btn" type="button" style="height: 22px; min-height: 22px; padding: 0 8px; font-size: 10px;">SNAPSHOT</button>
+          </div>
+          <div id="snapshotList" class="snapshot-list"></div>
+        </div>
+      </div>
+
+      <div class="status-row">
+        <div class="status" id="status" style="flex:1; border:none; background:none; padding:0;">SYSTEM READY</div>
+        <div class="char-count" id="charCount">CHARS: 0</div>
+      </div>
+    </section>
+
+    <section class="panel editor-wrap">
+      <div class="tab-strip" id="tabStrip"></div>
+      <div class="editor-container" id="editorContainer">
+        <textarea id="editor" placeholder="ここにテキストを入力してください"></textarea>
+        <div id="previewPane" class="preview-pane"><button class="close-preview" id="closePreviewBtn" title="CLOSE PREVIEW">×</button><div id="previewContent"></div></div>
+      </div>
+    </section>
+
+    <section class="footer">
+      <button class="action-btn copy" id="copyBtn">COPY</button>
+      <button class="action-btn clear" id="clearBtn">CLEAR</button>
+      <button class="action-btn open" id="openBtn">OPEN</button>
+      <button class="action-btn" id="overwriteBtn">OVERWRITE</button>
+      <button class="action-btn save" id="saveBtn">SAVE AS</button>
+    </section>
+  </main>
+
+  <script>
+    const THEMES = {
+      dark: {
+        bg: "#121722",
+        panel: "#191f2c",
+        surface: "#212a38",
+        surface2: "#1b2432",
+        text: "#e8edf7",
+        muted: "#8f98aa",
+        accent: "#8ea3c7",
+        controlAccent: "#8ea3c7",
+        border: "#303b4c",
+        borderStrong: "#435167"
+      },
+      light: {
+        bg: "#eceff3",
+        panel: "#f7f8fb",
+        surface: "#ffffff",
+        surface2: "#f0f2f6",
+        text: "#212733",
+        muted: "#6a7485",
+        accent: "#6d83aa",
+        controlAccent: "#6d83aa",
+        border: "#c7ced9",
+        borderStrong: "#a3afc0"
+      },
+      black: {
+        bg: "#121212",
+        panel: "#1b1b1b",
+        surface: "#232323",
+        surface2: "#1f1f1f",
+        text: "#ececec",
+        muted: "#9b9b9b",
+        accent: "#8a8f99",
+        controlAccent: "#8a8f99",
+        border: "#303030",
+        borderStrong: "#434343"
+      },
+      gray: {
+        bg: "#d9dde3",
+        panel: "#e7ebf1",
+        surface: "#f2f4f8",
+        surface2: "#e1e6ee",
+        text: "#2a313e",
+        muted: "#6e788a",
+        accent: "#7f8fa8",
+        controlAccent: "#7f8fa8",
+        border: "#b6bfcd",
+        borderStrong: "#99a5b8"
+      },
+      red: {
+        bg: "#151212",
+        panel: "#1f1818",
+        surface: "#2b2222",
+        surface2: "#241d1d",
+        text: "#f0e9e9",
+        muted: "#b9a8a8",
+        accent: "#c5aa88",
+        controlAccent: "#c5aa88",
+        border: "#443232",
+        borderStrong: "#5a3f3f"
+      }
+    };
+
+    const root = document.documentElement;
+    const editor = document.getElementById("editor");
+    const status = document.getElementById("status");
+    const fontSize = document.getElementById("fontSize");
+    const fontWeight = document.getElementById("fontWeight");
+    const lineHeight = document.getElementById("lineHeight");
+    const fontFamily = document.getElementById("fontFamily");
+    const fontSizeValue = document.getElementById("fontSizeValue");
+    const fontWeightValue = document.getElementById("fontWeightValue");
+    const lineHeightValue = document.getElementById("lineHeightValue");
+    const paperModeBtn = document.getElementById("paperModeBtn");
+    const focusModeBtn = document.getElementById("focusModeBtn");
+    const snapshotBtn = document.getElementById("snapshotBtn");
+    const overwriteBtn = document.getElementById("overwriteBtn");
+    const openBtn = document.getElementById("openBtn");
+    const snapshotList = document.getElementById("snapshotList");
+    const findInput = document.getElementById("findInput");
+    const replaceInput = document.getElementById("replaceInput");
+    const findNextBtn = document.getElementById("findNextBtn");
+    const replaceOneBtn = document.getElementById("replaceOneBtn");
+    const replaceAllBtn = document.getElementById("replaceAllBtn");
+    const allClearBtn = document.getElementById("allClearBtn");
+    const stripHtmlBtn = document.getElementById("stripHtmlBtn");
+    const toggleCaseBtn = document.getElementById("toggleCaseBtn");
+    const toggleZenHanBtn = document.getElementById("toggleZenHanBtn");
+    const toggleHiraKataBtn = document.getElementById("toggleHiraKataBtn");
+    const tabStrip = document.getElementById("tabStrip");
+    const alignLeftBtn = document.getElementById("alignLeftBtn");
+    const alignCenterBtn = document.getElementById("alignCenterBtn");
+    const alignRightBtn = document.getElementById("alignRightBtn");
+    const togglePreviewBtn = document.getElementById("togglePreviewBtn");
+    const editorContainer = document.getElementById("editorContainer");
+    const previewPane = document.getElementById("previewPane");
+    const previewContent = document.getElementById("previewContent");
+    const closePreviewBtn = document.getElementById("closePreviewBtn");
+    
+    const cleanBtn = document.getElementById("cleanBtn");
+    const unifyBtn = document.getElementById("unifyBtn");
+    const quoteBtn = document.getElementById("quoteBtn");
+    const chatBtn = document.getElementById("chatBtn");
+    const miniAlignL = document.getElementById("miniAlignL");
+    const miniAlignC = document.getElementById("miniAlignC");
+    const miniAlignR = document.getElementById("miniAlignR");
+    const miniCleanBtn = document.getElementById("miniCleanBtn");
+    const miniUnifyBtn = document.getElementById("miniUnifyBtn");
+    const miniQuoteBtn = document.getElementById("miniQuoteBtn");
+    const miniChatBtn = document.getElementById("miniChatBtn");
+    const htmlModeBtn = document.getElementById("htmlModeBtn");
+    const miniHtmlModeBtn = document.getElementById("miniHtmlModeBtn");
+    const miniTogglePreviewBtn = document.getElementById("miniTogglePreviewBtn");
+    let isHtmlMode = false;
+    const STORAGE_KEY = "solid-square-editor-state-v3";
+    const snapshots = [];
+    let findCursor = 0;
+    
+    let tabs = [];
+    let activeTabId = "";
+    const activeHandles = new Map();
+
+    function generateTabId() {
+      return "tab_" + Date.now().toString() + Math.floor(Math.random() * 1000).toString();
+    }
+
+    function setStatus(text) {
+      status.textContent = text;
+    }
+
+    function applyTheme(name) {
+      const t = THEMES[name] || THEMES.dark;
+      root.style.setProperty("--bg", t.bg);
+      root.style.setProperty("--panel", t.panel);
+      root.style.setProperty("--surface", t.surface);
+      root.style.setProperty("--surface-2", t.surface2);
+      root.style.setProperty("--text", t.text);
+      root.style.setProperty("--muted", t.muted);
+      root.style.setProperty("--accent", t.accent);
+      root.style.setProperty("--control-accent", t.controlAccent);
+      root.style.setProperty("--border", t.border);
+      root.style.setProperty("--border-strong", t.borderStrong);
+      document.querySelector('meta[name="theme-color"]').setAttribute("content", t.bg);
+      document.querySelectorAll(".theme-btn").forEach((btn) => {
+        btn.setAttribute("aria-pressed", String(btn.dataset.theme === name));
+      });
+    }
+
+    function applyPaperMode(enabled) {
+      if (enabled) {
+        root.style.setProperty("--editor-bg", "#f4f4f4");
+        root.style.setProperty("--editor-text", "#141414");
+        root.style.setProperty("--editor-border", "#cecece");
+        root.style.setProperty("--editor-shadow-top", "rgba(255, 255, 255, 0.75)");
+        root.style.setProperty("--editor-shadow-bottom", "rgba(0, 0, 0, 0.08)");
+      } else {
+        root.style.setProperty("--editor-bg", "#171717");
+        root.style.setProperty("--editor-text", "#f0f0f0");
+        root.style.setProperty("--editor-border", "#363636");
+        root.style.setProperty("--editor-shadow-top", "rgba(255, 255, 255, 0.02)");
+        root.style.setProperty("--editor-shadow-bottom", "rgba(0, 0, 0, 0.45)");
+      }
+      paperModeBtn.setAttribute("aria-pressed", String(enabled));
+    }
+
+    function applyTypography() {
+      const size = Number(fontSize.value);
+      const weight = Number(fontWeight.value);
+      const lh = Number(lineHeight.value);
+      editor.style.fontSize = `${size}px`;
+      editor.style.fontWeight = String(weight);
+      editor.style.lineHeight = String(lh);
+      editor.style.fontFamily = fontFamily.value;
+      fontSizeValue.textContent = `${size}px`;
+      fontWeightValue.textContent = String(weight);
+      lineHeightValue.textContent = lh.toFixed(1);
+    }
+
+    function escapeRegExp(input) {
+      return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }
+
+    function normalizeFilenameSeed(text) {
+      const cleaned = text
+        .replace(/\r?\n/g, " ")
+        .replace(/\s+/g, " ")
+        .replace(/[<>:"/\\|?*\u0000-\u001F]/g, "")
+        .trim();
+      return (cleaned || "untitled").slice(0, 30);
+    }
+
+    function buildSuggestedFilename() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, "0");
+      const d = String(now.getDate()).padStart(2, "0");
+      const h = String(now.getHours()).padStart(2, "0");
+      const min = String(now.getMinutes()).padStart(2, "0");
+      const head = normalizeFilenameSeed(editor.value);
+      return `${y}${m}${d}_${h}${min}_「${head}」.txt`;
+    }
+
+    function renderSnapshots() {
+      snapshotList.innerHTML = "";
+      if (snapshots.length === 0) {
+        const hint = document.createElement("span");
+        hint.className = "title-sub";
+        hint.textContent = "NO SNAPSHOT";
+        snapshotList.appendChild(hint);
+        return;
+      }
+      snapshots.forEach((snap, idx) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "snapshot-item";
+        btn.textContent = `${String(idx + 1).padStart(2, "0")} ${snap.label}`;
+        btn.addEventListener("click", () => {
+          editor.value = snap.text;
+          applyTypography();
+          saveState(activeTheme);
+          setStatus(`SNAPSHOT LOADED: ${String(idx + 1).padStart(2, "0")}`);
+        });
+        snapshotList.appendChild(btn);
+      });
+    }
+
+    async function saveAsTextFile() {
+      const filename = buildSuggestedFilename();
+      if ("showSaveFilePicker" in window) {
+        try {
+          const handle = await window.showSaveFilePicker({
+            id: 'solid-square-editor-files',
+            suggestedName: filename,
+            types: [
+              {
+                description: "Text Files",
+                accept: { "text/plain": [".txt"] }
+              }
+            ]
+          });
+          const writable = await handle.createWritable();
+          await writable.write(editor.value);
+          await writable.close();
+          const file = await handle.getFile();
+          const activeTab = tabs.find(t => t.id === activeTabId);
+          if (activeTab) {
+            activeTab.filename = file.name;
+            activeHandles.set(activeTab.id, handle);
+          }
+          setStatus(`FILE SAVED: ${file.name}`);
+        } catch (error) {
+          if (error && error.name === "AbortError") {
+            setStatus("SAVE CANCELED");
+            return;
+          }
+          setStatus("SAVE FAILED");
+        }
+        return;
+      }
+
+      const blob = new Blob([editor.value], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      const activeTab = tabs.find(t => t.id === activeTabId);
+      if (activeTab) {
+        activeTab.filename = filename;
+      }
+      setStatus(`FILE SAVED: ${filename}`);
+    }
+
+    function findNext() {
+      const needle = findInput.value;
+      if (!needle) {
+        setStatus("FIND KEYWORD IS EMPTY");
+        return;
+      }
+      const text = editor.value;
+      const index = text.indexOf(needle, findCursor);
+      const foundIndex = index !== -1 ? index : text.indexOf(needle, 0);
+      if (foundIndex === -1) {
+        setStatus("NO MATCH");
+        return;
+      }
+      editor.focus();
+      editor.setSelectionRange(foundIndex, foundIndex + needle.length);
+      findCursor = foundIndex + needle.length;
+      setStatus(`FOUND AT: ${foundIndex}`);
+    }
+
+    function replaceCurrent() {
+      const needle = findInput.value;
+      if (!needle) {
+        setStatus("FIND KEYWORD IS EMPTY");
+        return;
+      }
+      const replacement = replaceInput.value;
+      const start = editor.selectionStart;
+      const end = editor.selectionEnd;
+      const selected = editor.value.slice(start, end);
+      if (selected === needle) {
+        editor.setRangeText(replacement, start, end, "end");
+        saveState(activeTheme);
+        setStatus("ONE MATCH REPLACED");
+        return;
+      }
+      findNext();
+    }
+
+    function replaceAll() {
+      const needle = findInput.value;
+      if (!needle) {
+        setStatus("TARGET KEYWORD IS EMPTY");
+        return;
+      }
+      const replacement = replaceInput.value;
+      const reg = new RegExp(escapeRegExp(needle), "g");
+      const matches = editor.value.match(reg);
+      if (!matches) {
+        setStatus("NO MATCH FOR REPLACE ALL");
+        return;
+      }
+      editor.value = editor.value.replace(reg, replacement);
+      saveState(activeTheme);
+      setStatus(`REPLACED: ${matches.length}`);
+    }
+
+    function transformText(transformFn) {
+      const start = editor.selectionStart;
+      const end = editor.selectionEnd;
+      const text = editor.value;
+
+      if (start !== end) {
+        const selected = text.slice(start, end);
+        const transformed = transformFn(selected);
+        editor.setRangeText(transformed, start, end, "end");
+      } else {
+        editor.value = transformFn(text);
+      }
+      
+      saveState(activeTheme);
+      if (typeof updateCharCount === "function") updateCharCount();
+      setStatus("TEXT TRANSFORMED");
+    }
+
+    function stripHtml(text) {
+      const div = document.createElement("div");
+      
+      // Must append to DOM to get accurate visual text rendering from innerText
+      div.style.position = "fixed";
+      div.style.left = "-9999px";
+      div.style.whiteSpace = "pre-wrap";
+      div.style.width = "1000px"; // Give it some width
+      document.body.appendChild(div);
+      
+      div.innerHTML = text;
+
+      // Manually ensure some structural tags have spacing if the browser logic is too tight
+      div.querySelectorAll("p, div, li, tr, h1, h2, h3, h4").forEach((el, idx) => {
+        el.style.display = "block"; // Force block display
+        // Only add top margin if it's NOT the first element to avoid leading newlines
+        el.style.marginTop = idx === 0 ? "0" : "1em";
+        el.style.marginBottom = "1em";
+      });
+      
+      div.querySelectorAll("br").forEach(br => br.after("\n"));
+
+      const clean = div.innerText.replace(/\n{3,}/g, "\n\n").trim();
+      
+      document.body.removeChild(div);
+      return clean;
+    }
+
+    function toggleCase(text) {
+      const upper = text.toUpperCase();
+      const lower = text.toLowerCase();
+      return (text === upper) ? lower : upper;
+    }
+
+    function toggleZenHan(text) {
+      const toHalf = text.replace(/[！-～]/g, function(s) {
+        return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+      }).replace(/　/g, ' ');
+      
+      if (text !== toHalf) return toHalf;
+      
+      return text.replace(/[!-~]/g, function(s) {
+        return String.fromCharCode(s.charCodeAt(0) + 0xFEE0);
+      }).replace(/ /g, '　');
+    }
+
+    function toggleHiraKata(text) {
+      const toKata = text.replace(/[\u3041-\u3096]/g, function(match) {
+        var chr = match.charCodeAt(0) + 0x60;
+        return String.fromCharCode(chr);
+      });
+      if (text !== toKata) return toKata;
+      
+      return text.replace(/[\u30A1-\u30F6]/g, function(match) {
+        var chr = match.charCodeAt(0) - 0x60;
+        return String.fromCharCode(chr);
+      });
+    }
+
+    function cleanText(text) {
+      // Consolidate 2+ empty lines to 1, and trim each line
+      return text.split(/\r?\n/)
+        .map(line => line.trim())
+        .join("\n")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+    }
+
+    function unifySpaces(text) {
+      // Unify full-width and half-width spaces to half-width
+      return text.replace(/　/g, " ");
+    }
+
+    function quoteText(text) {
+      const lines = text.split(/\r?\n/);
+      if (lines.length === 0) return text;
+      
+      // Toggle logic: if all non-empty lines start with > , remove it.
+      // Otherwise, add it.
+      const nonEmptyLines = lines.filter(l => l.trim() !== "");
+      const allQuoted = nonEmptyLines.length > 0 && nonEmptyLines.every(l => l.startsWith("> "));
+      
+      if (allQuoted) {
+        return lines.map(l => l.startsWith("> ") ? l.slice(2) : l).join("\n");
+      } else {
+        return lines.map(l => l.startsWith("> ") ? l : `> ${l}`).join("\n");
+      }
+    }
+
+    function cleanupChat(text) {
+      // If the text appears to be HTML source, clean it first
+      // using the same logic as the HTML button (preserving line breaks)
+      if (text.includes("<") && text.includes(">")) {
+        text = stripHtml(text);
+      }
+
+      // Simple chat cleanup logic:
+      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l !== "");
+      const result = [];
+      
+      // Pattern: [Time] Name \n Message OR Time \n Name \n Message
+      // This is a simplified heuristic. We look for timestamps or just group 3-line blocks.
+      const timeRegex = /^(\d{1,2}:\d{2}|\[\d{1,2}:\d{2}\])/;
+      
+      let i = 0;
+      while (i < lines.length) {
+        if (timeRegex.test(lines[i])) {
+          // Case 1: [Time] Name \n Message
+          // Check if lines[i] has both time and name
+          const parts = lines[i].split(/\s+/);
+          if (parts.length >= 2) {
+            const time = parts[0];
+            const name = parts.slice(1).join(" ");
+            const body = lines[i+1] || "";
+            result.push(`[${time.replace(/[\[\]]/g, "")}] ${name}: ${body}`);
+            i += 2;
+          } else {
+            // Case 2: Time \n Name \n Message
+            const time = lines[i];
+            const name = lines[i+1] || "Unknown";
+            const body = lines[i+2] || "";
+            result.push(`[${time.replace(/[\[\]]/g, "")}] ${name}: ${body}`);
+            i += 3;
+          }
+        } else {
+          result.push(lines[i]);
+          i++;
+        }
+      }
+      return result.join("\n");
+    }
+
+    function updatePreview() {
+      // Render as HTML to support the "HTML state" the user wants to see in preview
+      previewContent.innerHTML = editor.value;
+    }
+
+    function cleanPastedHtml(html) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, "text/html");
+      const toRemove = doc.querySelectorAll("script, style, meta, link, title, head");
+      toRemove.forEach(el => el.remove());
+      
+      const all = doc.body.querySelectorAll("*");
+      all.forEach(el => {
+        // Keep only structural attributes if any, but mostly we want to strip the noise
+        const attrNames = Array.from(el.attributes).map(a => a.name);
+        attrNames.forEach(name => {
+          // Keep nothing for now to keep it clean, but the tags remain
+          el.removeAttribute(name);
+        });
+      });
+      
+      return doc.body.innerHTML;
+    }
+
+    function saveState(themeName) {
+      const activeTab = tabs.find(t => t.id === activeTabId);
+      if (activeTab) {
+        activeTab.text = editor.value;
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        tabs: tabs,
+        activeTabId: activeTabId,
+        fontSize: fontSize.value,
+        fontWeight: fontWeight.value,
+        lineHeight: lineHeight.value,
+        fontFamily: fontFamily.value,
+        theme: themeName,
+        paperMode: paperModeBtn.getAttribute("aria-pressed") === "true"
+      }));
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return null;
+        return JSON.parse(raw);
+      } catch (_) {
+        return null;
+      }
+    }
+
+    let activeTheme = "dark";
+    let paperModeEnabled = false;
+    const loaded = loadState();
+    
+    if (loaded) {
+      fontSize.value = loaded.fontSize || "16";
+      fontWeight.value = loaded.fontWeight || "400";
+      lineHeight.value = loaded.lineHeight || "1.6";
+      fontFamily.value = loaded.fontFamily || "Meiryo, sans-serif";
+      activeTheme = loaded.theme || "dark";
+      paperModeEnabled = Boolean(loaded.paperMode);
+      
+      if (loaded.tabs && Array.isArray(loaded.tabs)) {
+        tabs = loaded.tabs.map(t => {
+          if (typeof t.originalText === "undefined") {
+            t.originalText = t.filename ? "" : (t.text || "");
+          }
+          return t;
+        });
+        activeTabId = loaded.activeTabId || (tabs.length > 0 ? tabs[0].id : null);
+      } else {
+        tabs = [];
+        activeTabId = null;
+      }
+    } else {
+      tabs = [];
+      activeTabId = null;
+    }
+    
+    const initTab = tabs.find(t => t.id === activeTabId);
+    if (initTab) {
+      editor.value = initTab.text;
+      editor.disabled = false;
+      editor.placeholder = "ここにテキストを入力してください";
+    } else {
+      editor.value = "";
+      editor.disabled = true;
+      editor.placeholder = "+ ボタンでタブを追加してください";
+    }
+
+    function switchTab(id) {
+      if (id === activeTabId) return;
+      const currentTab = tabs.find(t => t.id === activeTabId);
+      if (currentTab) currentTab.text = editor.value;
+      activeTabId = id;
+      const newTab = tabs.find(t => t.id === activeTabId);
+      if (newTab) {
+        editor.value = newTab.text;
+        editor.disabled = false;
+        editor.placeholder = "ここにテキストを入力してください";
+        if (newTab.filename) {
+          setStatus(`CURRENT FILE: ${newTab.filename}`);
+        } else {
+          setStatus(`TAB SWITCHED: ${newTab.label}`);
+        }
+      } else {
+        editor.value = "";
+        editor.disabled = true;
+        editor.placeholder = "+ ボタンでタブを追加してください";
+      }
+      renderTabs();
+      if (typeof updateCharCount === "function") updateCharCount();
+      saveState(activeTheme);
+      if (!editor.disabled) editor.focus();
+    }
+
+    function addTab() {
+      const newId = generateTabId();
+      let maxNum = 0;
+      tabs.forEach(t => {
+        const match = t.label.match(/TAB (\d+)/);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num > maxNum) maxNum = num;
+        }
+      });
+      const newIndex = maxNum + 1;
+      const newTab = { id: newId, label: `TAB ${String(newIndex).padStart(2, "0")}`, text: "", filename: null, originalText: "" };
+      tabs.push(newTab);
+      switchTab(newId);
+    }
+
+    function closeTab(id) {
+      const tabToClose = tabs.find(t => t.id === id);
+      if (!tabToClose) return;
+      
+      if (id === activeTabId) {
+        tabToClose.text = editor.value;
+      }
+      
+      const isDirty = (tabToClose.text || "") !== (tabToClose.originalText || "");
+      
+      if (isDirty) {
+        const warning = "（保存していない変更内容は破棄されます）";
+        if (!window.confirm(`「${tabToClose.label}」に変更があります。閉じますか？\n${warning}`)) return;
+      }
+
+      const index = tabs.findIndex(t => t.id === id);
+      if (index === -1) return;
+      
+      if (id === activeTabId) {
+        if (tabs.length === 1) {
+          activeTabId = null;
+          editor.value = "";
+          editor.disabled = true;
+          editor.placeholder = "+ ボタンでタブを追加してください";
+        } else {
+          const nextActive = tabs[index > 0 ? index - 1 : index + 1];
+          activeTabId = nextActive.id;
+          editor.value = nextActive.text;
+        }
+      }
+      tabs.splice(index, 1);
+      renderTabs();
+      if (typeof updateCharCount === "function") updateCharCount();
+      saveState(activeTheme);
+    }
+
+    function renderTabs() {
+      tabStrip.innerHTML = "";
+      tabs.forEach((tab, index) => {
+        const item = document.createElement("div");
+        item.className = "tab-item";
+        item.setAttribute("aria-selected", tab.id === activeTabId ? "true" : "false");
+        
+        const label = document.createElement("span");
+        label.textContent = tab.label;
+        
+        const closeBtn = document.createElement("span");
+        closeBtn.className = "tab-close";
+        closeBtn.textContent = "×";
+        
+        item.appendChild(label);
+        item.appendChild(closeBtn);
+        
+        label.addEventListener("click", () => switchTab(tab.id));
+        closeBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          closeTab(tab.id);
+        });
+        tabStrip.appendChild(item);
+      });
+      
+      const addBtn = document.createElement("button");
+      addBtn.className = "tab-add";
+      addBtn.textContent = "+";
+      addBtn.title = "NEW TAB";
+      addBtn.addEventListener("click", addTab);
+      tabStrip.appendChild(addBtn);
+
+      if (tabs.length > 1) {
+        const closeAllBtn = document.createElement("button");
+        closeAllBtn.className = "tab-add";
+        closeAllBtn.textContent = "CLEAR ALL";
+        closeAllBtn.title = "CLOSE ALL TABS";
+        closeAllBtn.style.width = "auto";
+        closeAllBtn.style.padding = "0 8px";
+        closeAllBtn.style.fontSize = "9px";
+        closeAllBtn.style.marginLeft = "8px";
+        closeAllBtn.style.borderColor = "var(--border-strong)";
+        closeAllBtn.style.color = "var(--muted)";
+        closeAllBtn.addEventListener("click", closeAllTabs);
+        
+        closeAllBtn.addEventListener("mouseover", () => {
+          closeAllBtn.style.color = "#ff6b6b";
+          closeAllBtn.style.borderColor = "#ff6b6b";
+        });
+        closeAllBtn.addEventListener("mouseout", () => {
+          closeAllBtn.style.color = "var(--muted)";
+          closeAllBtn.style.borderColor = "var(--border-strong)";
+        });
+
+        tabStrip.appendChild(closeAllBtn);
+      }
+    }
+
+    function closeAllTabs() {
+      if (tabs.length === 0) return;
+
+      const currentTab = tabs.find(t => t.id === activeTabId);
+      if (currentTab) currentTab.text = editor.value;
+
+      const dirtyTabs = tabs.filter(t => (t.text || "") !== (t.originalText || ""));
+
+      if (dirtyTabs.length > 0) {
+        let msg = "保存されていないタブがあります。すべて閉じてよろしいですか？\n\n【未保存のタブ】\n";
+        dirtyTabs.forEach(t => {
+           if (t.filename) {
+             msg += `・${t.label} (${t.filename})\n`;
+           } else {
+             msg += `・${t.label} (新規テキスト)\n`;
+           }
+        });
+        msg += "\n※これらを閉じると、変更内容はすべて失われます。";
+        
+        if (!window.confirm(msg)) {
+          return;
+        }
+      } else {
+        if (!window.confirm("すべてのタブを閉じますか？")) {
+          return;
+        }
+      }
+
+      tabs = [];
+      activeTabId = null;
+      activeHandles.clear();
+      editor.value = "";
+      editor.disabled = true;
+      editor.placeholder = "+ ボタンでタブを追加してください";
+      
+      renderTabs();
+      if (typeof updateCharCount === "function") updateCharCount();
+      saveState(activeTheme);
+      setStatus("ALL TABS CLOSED");
+    }
+
+    applyTheme(activeTheme);
+    applyPaperMode(paperModeEnabled);
+    applyTypography();
+    renderTabs();
+    renderSnapshots();
+    setStatus("SYSTEM READY");
+
+    document.querySelectorAll(".theme-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        activeTheme = btn.dataset.theme;
+        applyTheme(activeTheme);
+        saveState(activeTheme);
+        setStatus(`THEME CHANGED: ${btn.textContent.toUpperCase()}`);
+      });
+    });
+
+    paperModeBtn.addEventListener("click", () => {
+      paperModeEnabled = !paperModeEnabled;
+      applyPaperMode(paperModeEnabled);
+      saveState(activeTheme);
+      setStatus(paperModeEnabled ? "PAPER MODE: ON" : "PAPER MODE: OFF");
+    });
+
+    [fontSize, fontWeight, lineHeight, fontFamily].forEach((el) => {
+      const eventName = el.tagName === "SELECT" ? "change" : "input";
+      el.addEventListener(eventName, () => {
+        applyTypography();
+        saveState(activeTheme);
+        setStatus("TYPOGRAPHY UPDATED");
+      });
+    });
+
+    editor.addEventListener("input", () => {
+      saveState(activeTheme);
+    });
+
+    editor.addEventListener("paste", (e) => {
+      const html = e.clipboardData.getData("text/html");
+      if (html) {
+        e.preventDefault();
+        
+        let content = "";
+        if (isHtmlMode) {
+          // Paste as raw HTML source
+          content = cleanPastedHtml(html);
+          setStatus("PASTED AS HTML SOURCE");
+        } else {
+          // Default paste is "Clean Text"
+          content = stripHtml(html);
+          setStatus("PASTED AS CLEAN TEXT");
+        }
+        
+        const start = editor.selectionStart;
+        const end = editor.selectionEnd;
+        const text = editor.value;
+        
+        editor.value = text.slice(0, start) + content + text.slice(end);
+        editor.selectionStart = editor.selectionEnd = start + content.length;
+        
+        saveState(activeTheme);
+        updateCharCount();
+        if (editorContainer.classList.contains("preview-mode")) updatePreview();
+      }
+    });
+
+    function toggleHtmlMode() {
+      isHtmlMode = !isHtmlMode;
+      const btns = [htmlModeBtn, miniHtmlModeBtn];
+      btns.forEach(btn => {
+        if (isHtmlMode) {
+          btn.style.background = "var(--accent)";
+          btn.style.color = "#000";
+        } else {
+          btn.style.background = "transparent";
+          btn.style.color = "var(--accent)";
+        }
+      });
+      setStatus(isHtmlMode ? "HTML PASTE MODE: ON" : "HTML PASTE MODE: OFF");
+    }
+
+    htmlModeBtn.addEventListener("click", toggleHtmlMode);
+    miniHtmlModeBtn.addEventListener("click", toggleHtmlMode);
+
+    closePreviewBtn.addEventListener("click", () => {
+      editorContainer.classList.remove("preview-mode");
+      togglePreviewBtn.setAttribute("aria-pressed", "false");
+      togglePreviewBtn.style.background = "transparent";
+      togglePreviewBtn.style.color = "var(--accent)";
+      setStatus("PREVIEW CLOSED");
+    });
+
+    document.getElementById("copyBtn").addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(editor.value);
+        setStatus("TEXT COPIED");
+      } catch (_) {
+        setStatus("COPY FAILED");
+      }
+    });
+
+    document.getElementById("clearBtn").addEventListener("click", () => {
+      editor.value = "";
+      saveState(activeTheme);
+      setStatus("TEXT CLEARED");
+    });
+
+    document.getElementById("openBtn").addEventListener("click", async () => {
+      try {
+        let file, filename, handle = null;
+        if ("showOpenFilePicker" in window) {
+          const [fileHandle] = await window.showOpenFilePicker({
+            id: 'solid-square-editor-files',
+            types: [{ description: "Text Files", accept: { "text/plain": [".txt", ".md", ".csv", ".json", ".html", ".css", ".js"] } }]
+          });
+          handle = fileHandle;
+          file = await fileHandle.getFile();
+          filename = file.name;
+        } else {
+          const input = document.createElement("input");
+          input.type = "file";
+          input.accept = "text/plain";
+          await new Promise((resolve, reject) => {
+            input.onchange = e => {
+              if (e.target.files && e.target.files[0]) {
+                file = e.target.files[0];
+                filename = file.name;
+                resolve();
+              } else {
+                reject();
+              }
+            };
+            input.click();
+          });
+        }
+        
+        if (!file) return;
+        const text = await file.text();
+        
+        if (activeTabId === null) {
+          addTab();
+        } else if (editor.value.trim() !== "") {
+          addTab();
+        }
+        
+        editor.value = text;
+        const activeTab = tabs.find(t => t.id === activeTabId);
+        if (activeTab) {
+          activeTab.text = text;
+          activeTab.filename = filename;
+          if (handle) activeHandles.set(activeTab.id, handle);
+        }
+        saveState(activeTheme);
+        if (typeof updateCharCount === "function") updateCharCount();
+        setStatus(`FILE OPENED: ${filename}`);
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          setStatus("OPEN FAILED");
+        }
+      }
+    });
+
+    document.getElementById("saveBtn").addEventListener("click", () => {
+      saveAsTextFile();
+    });
+
+    overwriteBtn.addEventListener("click", async () => {
+      if (!activeTabId) return;
+      const handle = activeHandles.get(activeTabId);
+      if (!handle) {
+        saveAsTextFile();
+        return;
+      }
+      try {
+        const writable = await handle.createWritable();
+        await writable.write(editor.value);
+        await writable.close();
+        setStatus(`FILE OVERWRITTEN: ${handle.name}`);
+      } catch (error) {
+        console.error(error);
+        if (error.name === 'NotAllowedError') {
+          setStatus("PERMISSION DENIED FOR OVERWRITE");
+        } else {
+          setStatus("OVERWRITE FAILED");
+        }
+      }
+    });
+
+    snapshotBtn.addEventListener("click", () => {
+      const head = normalizeFilenameSeed(editor.value);
+      snapshots.push({ text: editor.value, label: head });
+      if (snapshots.length > 20) snapshots.shift();
+      renderSnapshots();
+      setStatus(`SNAPSHOT SAVED: ${String(snapshots.length).padStart(2, "0")}`);
+    });
+
+    findNextBtn.addEventListener("click", findNext);
+    replaceOneBtn.addEventListener("click", replaceCurrent);
+    replaceAllBtn.addEventListener("click", replaceAll);
+    allClearBtn.addEventListener("click", () => {
+      findInput.value = "";
+      replaceInput.value = "";
+      findCursor = 0;
+      snapshots.length = 0;
+      renderSnapshots();
+      setStatus("FIND/REPLACE & SNAPSHOT CLEARED");
+    });
+
+    stripHtmlBtn.addEventListener("click", () => transformText(stripHtml));
+    toggleCaseBtn.addEventListener("click", () => transformText(toggleCase));
+    toggleZenHanBtn.addEventListener("click", () => transformText(toggleZenHan));
+    toggleHiraKataBtn.addEventListener("click", () => transformText(toggleHiraKata));
+
+    alignLeftBtn.addEventListener("click", () => {
+      editor.style.textAlign = "left";
+      setStatus("ALIGN: LEFT");
+    });
+    alignCenterBtn.addEventListener("click", () => {
+      editor.style.textAlign = "center";
+      setStatus("ALIGN: CENTER");
+    });
+    alignRightBtn.addEventListener("click", () => {
+      editor.style.textAlign = "right";
+      setStatus("ALIGN: RIGHT");
+    });
+
+    cleanBtn.addEventListener("click", () => transformText(cleanText));
+    unifyBtn.addEventListener("click", () => transformText(unifySpaces));
+    quoteBtn.addEventListener("click", () => transformText(quoteText));
+    chatBtn.addEventListener("click", () => transformText(cleanupChat));
+
+    togglePreviewBtn.addEventListener("click", () => {
+      const isPreview = editorContainer.classList.toggle("preview-mode");
+      togglePreviewBtn.setAttribute("aria-pressed", String(isPreview));
+      if (isPreview) {
+        updatePreview();
+        togglePreviewBtn.style.background = "var(--accent)";
+        togglePreviewBtn.style.color = "#000";
+      } else {
+        togglePreviewBtn.style.background = "transparent";
+        togglePreviewBtn.style.color = "var(--accent)";
+      }
+      setStatus(isPreview ? "PREVIEW MODE: ON" : "PREVIEW MODE: OFF");
+    });
+
+    // --- Character Count Logic ---
+    const charCountEl = document.getElementById("charCount");
+    function updateCharCount() {
+      const len = editor.value.length;
+      charCountEl.textContent = `CHARS: ${len.toLocaleString()}`;
+    }
+    editor.addEventListener("input", () => {
+      updateCharCount();
+      if (editorContainer.classList.contains("preview-mode")) {
+        updatePreview();
+      }
+    });
+    updateCharCount();
+
+    // --- Mini Strip Logic ---
+    const miniSizeVal = document.getElementById("miniSizeVal");
+    const miniFind = document.getElementById("miniFind");
+    const miniReplace = document.getElementById("miniReplace");
+    const miniNextBtn = document.getElementById("miniNextBtn");
+    const miniReplaceBtn = document.getElementById("miniReplaceBtn");
+    const miniExitBtn = document.getElementById("miniExitBtn");
+    const miniStripHtmlBtn = document.getElementById("miniStripHtmlBtn");
+    const miniToggleCaseBtn = document.getElementById("miniToggleCaseBtn");
+    const miniToggleZenHanBtn = document.getElementById("miniToggleZenHanBtn");
+    const miniToggleHiraKataBtn = document.getElementById("miniToggleHiraKataBtn");
+
+    function syncMiniStrip() {
+      miniSizeVal.textContent = `${fontSize.value}PX`;
+      miniFind.value = findInput.value;
+      miniReplace.value = replaceInput.value;
+      
+      document.querySelectorAll(".mini-dot").forEach(dot => {
+        dot.setAttribute("aria-pressed", String(dot.dataset.theme === activeTheme));
+      });
+    }
+
+    miniFind.addEventListener("input", () => { findInput.value = miniFind.value; });
+    miniReplace.addEventListener("input", () => { replaceInput.value = miniReplace.value; });
+    miniNextBtn.addEventListener("click", findNext);
+    miniReplaceBtn.addEventListener("click", replaceCurrent);
+    miniStripHtmlBtn.addEventListener("click", () => transformText(stripHtml));
+    miniToggleCaseBtn.addEventListener("click", () => transformText(toggleCase));
+    miniToggleZenHanBtn.addEventListener("click", () => transformText(toggleZenHan));
+    miniToggleHiraKataBtn.addEventListener("click", () => transformText(toggleHiraKata));
+    miniAlignL.addEventListener("click", () => {
+      editor.style.textAlign = "left";
+      setStatus("ALIGN: LEFT");
+    });
+    miniAlignC.addEventListener("click", () => {
+      editor.style.textAlign = "center";
+      setStatus("ALIGN: CENTER");
+    });
+    miniAlignR.addEventListener("click", () => {
+      editor.style.textAlign = "right";
+      setStatus("ALIGN: RIGHT");
+    });
+    miniCleanBtn.addEventListener("click", () => transformText(cleanText));
+    miniUnifyBtn.addEventListener("click", () => transformText(unifySpaces));
+    miniQuoteBtn.addEventListener("click", () => transformText(quoteText));
+    miniChatBtn.addEventListener("click", () => transformText(cleanupChat));
+    miniTogglePreviewBtn.addEventListener("click", () => togglePreviewBtn.click());
+
+    miniExitBtn.addEventListener("click", () => {
+       document.body.classList.remove("minimum-mode");
+       focusModeBtn.textContent = "READING FOCUS";
+       setStatus("MINIMUM MODE: OFF");
+    });
+
+    document.querySelectorAll(".mini-dot").forEach(dot => {
+      dot.addEventListener("click", () => {
+        activeTheme = dot.dataset.theme;
+        applyTheme(activeTheme);
+        saveState(activeTheme);
+        syncMiniStrip();
+        setStatus(`THEME: ${activeTheme.toUpperCase()}`);
+      });
+    });
+
+    // Update mini values when main inputs change
+    [fontSize, fontWeight, lineHeight, fontFamily].forEach(el => {
+      el.addEventListener(el.tagName === "SELECT" ? "change" : "input", syncMiniStrip);
+    });
+
+    focusModeBtn.addEventListener("click", () => {
+      const isMini = document.body.classList.toggle("minimum-mode");
+      focusModeBtn.textContent = isMini ? "EXIT FOCUS" : "READING FOCUS";
+      if (isMini) syncMiniStrip();
+      setStatus(isMini ? "MINIMUM MODE: ON" : "MINIMUM MODE: OFF");
+    });
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", async () => {
+        try {
+          await navigator.serviceWorker.register("./sw.js");
+        } catch (_) {
+          setStatus("SERVICE WORKER ERROR");
+        }
+      });
+    }
+  </script>
+</body>
+</html>

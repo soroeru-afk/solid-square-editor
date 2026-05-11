@@ -376,6 +376,8 @@
     .editor-container {
       display: flex;
       flex: 1;
+      min-width: 0;
+      max-width: 100%;
       min-height: 0;
       gap: 0;
       transition: gap 0.2s;
@@ -453,6 +455,7 @@
     textarea {
       flex: 1;
       width: 100%;
+      min-width: 0;
       min-height: 0;
       resize: none;
       padding: 18px;
@@ -470,13 +473,14 @@
     .preview-pane {
       display: none;
       flex: 1;
+      min-width: 0;
       padding: 18px;
       font-size: 16px;
       line-height: 1.6;
       border: 1px solid var(--editor-border);
       color: var(--editor-text);
       background: var(--editor-bg);
-      overflow-y: auto;
+      overflow: auto;
       white-space: pre-wrap;
       word-break: break-all;
       position: relative;
@@ -1851,7 +1855,7 @@
     applyTypography();
     renderTabs();
     renderSnapshots();
-    setStatus("SYSTEM READY (v15)");
+    setStatus("SYSTEM READY (v16)");
 
     document.querySelectorAll(".theme-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
