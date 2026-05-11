@@ -1329,25 +1329,28 @@
     function stripHtml(text) {
       const div = document.createElement("div");
       
-      // Must append to DOM to get accurate visual text rendering from innerText
       div.style.position = "fixed";
       div.style.left = "-9999px";
       div.style.whiteSpace = "pre-wrap";
-      div.style.width = "1000px"; // Give it some width
+      div.style.width = "1000px";
       document.body.appendChild(div);
       
       div.innerHTML = text;
 
-      // Manually ensure some structural tags have spacing if the browser logic is too tight
-      div.querySelectorAll("p, div, li, tr, h1, h2, h3, h4").forEach((el, idx) => {
-        el.style.display = "block"; // Force block display
-        // Only add top margin if it's NOT the first element to avoid leading newlines
-        el.style.marginTop = idx === 0 ? "0" : "1em";
-        el.style.marginBottom = "1em";
+      // Use invisible zero-width spaces (\u200B) to mark bold text for the CHAT button
+      div.querySelectorAll("b, strong").forEach(el => {
+        const t = el.innerText.trim();
+        if (t) el.innerText = `\u200B${t}\u200B`;
+      });
+
+      // Standard block display without manual newline insertion
+      div.querySelectorAll("p, div, li, tr, h1, h2, h3, h4").forEach((el) => {
+        el.style.display = "block";
       });
       
       div.querySelectorAll("br").forEach(br => br.after("\n"));
 
+      // innerText will handle standard spacing. We only trim excessive newlines.
       const clean = div.innerText.replace(/\n{3,}/g, "\n\n").trim();
       
       document.body.removeChild(div);
@@ -1416,46 +1419,118 @@
     }
 
     function cleanupChat(text) {
-      // If the text appears to be HTML source, clean it first
-      // using the same logic as the HTML button (preserving line breaks)
       if (text.includes("<") && text.includes(">")) {
         text = stripHtml(text);
       }
 
-      // Simple chat cleanup logic:
-      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l !== "");
+      // Convert Invisible Bold Markers (\u200B) to Brackets
+      text = text.replace(/\u200B(.*?)\u200B/g, "【$1】");
+      // Remove any stray markers
+      text = text.replace(/\u200B/g, "");
+
+      const lines = text.split(/\r?\n/).map(l => l.trim());
       const result = [];
       
-      // Pattern: [Time] Name \n Message OR Time \n Name \n Message
-      // This is a simplified heuristic. We look for timestamps or just group 3-line blocks.
+      // Detection patterns
       const timeRegex = /^(\d{1,2}:\d{2}|\[\d{1,2}:\d{2}\])/;
+      const listRegex = /^(\d+[\.\)）]|[\・\-\*])/; 
+      const headingRegex = /^(#+|(\d+[\.\)）]))\s+/;
+      const labelRegex = /^([^:：\s]{1,15})[:：]/;
+      const speakerRegex = /^(User|ChatGPT|Assistant|Gemini|You|Me|MGR|Manager|カオル|AI|Antigravity)[:：]/i;
+      const citationRegex = /^(\+\d+|\[\d+\])$/; // Matches +1, [1], etc.
       
-      let i = 0;
-      while (i < lines.length) {
-        if (timeRegex.test(lines[i])) {
-          // Case 1: [Time] Name \n Message
-          // Check if lines[i] has both time and name
-          const parts = lines[i].split(/\s+/);
+      // Heading keywords (expanded)
+      const keywordHeadingRegex = /^.{1,30}(概要|まとめ|について|方法|原因|対策|手順|ポイント|メモ|注意|ヒント|ステップ|理由|背景|目的|結論|でした|ました|です|さい)$/;
+
+      for (let i = 0; i < lines.length; i++) {
+        let line = lines[i];
+        if (line === "") {
+          if (result.length > 0 && result[result.length-1] !== "") {
+            result.push("");
+          }
+          continue;
+        }
+
+        // Handle Citations: Join to the previous non-empty line if it's a short reference
+        if (citationRegex.test(line) && result.length > 0) {
+          let lastIdx = result.length - 1;
+          while (lastIdx >= 0 && result[lastIdx] === "") lastIdx--;
+          if (lastIdx >= 0) {
+            result[lastIdx] = result[lastIdx] + " " + line;
+            continue;
+          }
+        }
+
+        // Smarter heading detection: short lines, emphasized lines, or keyword lines
+        const isEmphasized = line.startsWith("【") && line.endsWith("】");
+        const isHeading = headingRegex.test(line) || keywordHeadingRegex.test(line) || isEmphasized || (line.length < 25 && (!line.includes("。") || line.length < 15));
+        
+        const isList = listRegex.test(line);
+        const isTime = timeRegex.test(line);
+        const isSpeaker = speakerRegex.test(line);
+        const isLabel = labelRegex.test(line) && !isTime && !isSpeaker && !isList && !isHeading;
+
+        // Add spacing before significant blocks
+        if (result.length > 0 && result[result.length-1] !== "") {
+          if (isList || isTime || isSpeaker || isHeading || isLabel) {
+            result.push("");
+          }
+        }
+
+        if (isTime) {
+          const parts = line.split(/\s+/);
           if (parts.length >= 2) {
-            const time = parts[0];
-            const name = parts.slice(1).join(" ");
-            const body = lines[i+1] || "";
-            result.push(`[${time.replace(/[\[\]]/g, "")}] ${name}: ${body}`);
-            i += 2;
+            result.push(line);
           } else {
-            // Case 2: Time \n Name \n Message
-            const time = lines[i];
+            const time = line;
             const name = lines[i+1] || "Unknown";
             const body = lines[i+2] || "";
             result.push(`[${time.replace(/[\[\]]/g, "")}] ${name}: ${body}`);
-            i += 3;
+            i += 2;
           }
         } else {
-          result.push(lines[i]);
-          i++;
+          result.push(line);
+          
+          // spacing below
+          if (isHeading || isLabel) {
+            const nextLine = (lines[i+1] || "").trim();
+            if (nextLine !== "" && !headingRegex.test(nextLine) && !listRegex.test(nextLine) && !labelRegex.test(nextLine) && !keywordHeadingRegex.test(nextLine) && !citationRegex.test(nextLine)) {
+              result.push("");
+            }
+          }
         }
       }
-      return result.join("\n");
+
+      // Final pass: ensure spacing and "merihari"
+      const finalLines = result.join("\n").split("\n");
+      const processed = [];
+      for (let i = 0; i < finalLines.length; i++) {
+        const l = finalLines[i];
+        const trimmed = l.trim();
+        if (trimmed === "") {
+          if (processed.length > 0 && processed[processed.length-1] !== "") processed.push("");
+          continue;
+        }
+        
+        const isStrongHeading = headingRegex.test(trimmed) || keywordHeadingRegex.test(trimmed) || (trimmed.startsWith("【") && trimmed.endsWith("】"));
+        
+        // Spacing above items
+        if (i > 0 && (isStrongHeading || listRegex.test(trimmed) || labelRegex.test(trimmed)) && processed[processed.length - 1] !== "") {
+          processed.push("");
+        }
+        
+        processed.push(l);
+
+        // Spacing below headings (extra merihari)
+        if (isStrongHeading || (labelRegex.test(trimmed) && trimmed.length < 40)) {
+          const next = (finalLines[i+1] || "").trim();
+          if (next !== "" && !headingRegex.test(next) && !listRegex.test(next) && !labelRegex.test(next) && !keywordHeadingRegex.test(next)) {
+            processed.push("");
+          }
+        }
+      }
+
+      return processed.join("\n").replace(/\n{3,}/g, "\n\n").trim();
     }
 
     function updatePreview() {
@@ -1731,7 +1806,7 @@
     applyTypography();
     renderTabs();
     renderSnapshots();
-    setStatus("SYSTEM READY");
+    setStatus("SYSTEM READY (v15)");
 
     document.querySelectorAll(".theme-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
