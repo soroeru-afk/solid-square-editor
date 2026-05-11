@@ -523,6 +523,22 @@
       margin-bottom: 1em;
     }
 
+    /* --- Writing Mode --- */
+    .vertical-mode textarea,
+    .vertical-mode .preview-pane {
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      padding-top: 18px;
+      padding-bottom: 18px;
+      padding-left: 24px;
+      padding-right: 24px;
+    }
+
+    .vertical-mode textarea {
+      text-align: start;
+      line-height: 2; /* Vertical often needs more leading */
+    }
+
     textarea:disabled {
       opacity: 0.5;
       cursor: not-allowed;
@@ -811,6 +827,7 @@
         <div class="mini-sep"></div>
         <button class="mini-btn-box" id="miniHtmlModeBtn" title="HTML PASTE MODE">HTML</button>
         <button class="mini-btn-box" id="miniTogglePreviewBtn" title="PREVIEW">MD</button>
+        <button class="mini-btn-box" id="miniToggleWritingModeBtn" title="VERTICAL / HORIZONTAL">横/縦</button>
         <div class="mini-sep"></div>
         <button class="mini-btn-box" id="miniCleanBtn" title="CLEAN">CLN</button>
         <button class="mini-btn-box" id="miniUnifyBtn" title="UNIFY">UNI</button>
@@ -877,7 +894,7 @@
           <button id="toggleZenHanBtn" class="mini-btn" type="button" title="全角/半角切替">半/全</button>
           <button id="toggleHiraKataBtn" class="mini-btn" type="button" title="ひらがな/カタカナ切替">あ/ア</button>
           <button id="stripHtmlBtn" class="mini-btn" type="button" title="HTMLタグを除去">STRIP</button>
-          <div></div> <!-- Empty space instead of line -->
+          <button id="toggleWritingModeBtn" class="mini-btn" type="button" title="縦組/横組切替" style="color:var(--accent); border-color:var(--accent);">横/縦</button>
           
           <button id="alignLeftBtn" class="mini-btn" type="button" title="左寄せ">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="17" y1="10" x2="3" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="17" y1="18" x2="3" y2="18"></line></svg>
@@ -1082,7 +1099,11 @@
     const htmlModeBtn = document.getElementById("htmlModeBtn");
     const miniHtmlModeBtn = document.getElementById("miniHtmlModeBtn");
     const miniTogglePreviewBtn = document.getElementById("miniTogglePreviewBtn");
+    const toggleWritingModeBtn = document.getElementById("toggleWritingModeBtn");
+    const miniToggleWritingModeBtn = document.getElementById("miniToggleWritingModeBtn");
+
     let isHtmlMode = false;
+    let isVertical = false;
     const STORAGE_KEY = "solid-square-editor-state-v3";
     const snapshots = [];
     let findCursor = 0;
@@ -1154,6 +1175,27 @@
       fontSizeValue.textContent = `${size}px`;
       fontWeightValue.textContent = String(weight);
       lineHeightValue.textContent = lh.toFixed(1);
+    }
+
+    function applyWritingMode(vertical) {
+      isVertical = vertical;
+      const btns = [toggleWritingModeBtn, miniToggleWritingModeBtn];
+      btns.forEach(btn => {
+        if (isVertical) {
+          btn.style.background = "var(--accent)";
+          btn.style.color = "#000";
+          btn.style.borderColor = "var(--accent)";
+        } else {
+          btn.style.background = "var(--surface)";
+          btn.style.color = "var(--accent)";
+          btn.style.borderColor = "var(--accent)";
+        }
+      });
+      if (isVertical) {
+        editorContainer.classList.add("vertical-mode");
+      } else {
+        editorContainer.classList.remove("vertical-mode");
+      }
     }
 
     function escapeRegExp(input) {
@@ -1495,7 +1537,8 @@
         lineHeight: lineHeight.value,
         fontFamily: fontFamily.value,
         theme: themeName,
-        paperMode: paperModeBtn.getAttribute("aria-pressed") === "true"
+        paperMode: paperModeBtn.getAttribute("aria-pressed") === "true",
+        isVertical: isVertical
       }));
     }
 
@@ -1520,6 +1563,7 @@
       fontFamily.value = loaded.fontFamily || "Meiryo, sans-serif";
       activeTheme = loaded.theme || "dark";
       paperModeEnabled = Boolean(loaded.paperMode);
+      isVertical = Boolean(loaded.isVertical);
       
       if (loaded.tabs && Array.isArray(loaded.tabs)) {
         tabs = loaded.tabs.map(t => {
@@ -1728,6 +1772,7 @@
 
     applyTheme(activeTheme);
     applyPaperMode(paperModeEnabled);
+    applyWritingMode(isVertical);
     applyTypography();
     renderTabs();
     renderSnapshots();
@@ -1798,9 +1843,11 @@
         if (isHtmlMode) {
           btn.style.background = "var(--accent)";
           btn.style.color = "#000";
+          btn.style.borderColor = "var(--accent)";
         } else {
-          btn.style.background = "transparent";
+          btn.style.background = "var(--surface)";
           btn.style.color = "var(--accent)";
+          btn.style.borderColor = "var(--accent)";
         }
       });
       setStatus(isHtmlMode ? "HTML PASTE MODE: ON" : "HTML PASTE MODE: OFF");
@@ -1966,12 +2013,23 @@
         updatePreview();
         togglePreviewBtn.style.background = "var(--accent)";
         togglePreviewBtn.style.color = "#000";
+        togglePreviewBtn.style.borderColor = "var(--accent)";
       } else {
-        togglePreviewBtn.style.background = "transparent";
+        togglePreviewBtn.style.background = "var(--surface)";
         togglePreviewBtn.style.color = "var(--accent)";
+        togglePreviewBtn.style.borderColor = "var(--accent)";
       }
       setStatus(isPreview ? "PREVIEW MODE: ON" : "PREVIEW MODE: OFF");
     });
+
+    function toggleWritingMode() {
+      applyWritingMode(!isVertical);
+      saveState(activeTheme);
+      setStatus(isVertical ? "WRITING MODE: VERTICAL" : "WRITING MODE: HORIZONTAL");
+    }
+
+    toggleWritingModeBtn.addEventListener("click", toggleWritingMode);
+    miniToggleWritingModeBtn.addEventListener("click", toggleWritingMode);
 
     // --- Character Count Logic ---
     const charCountEl = document.getElementById("charCount");
