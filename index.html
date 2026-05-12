@@ -1386,13 +1386,8 @@
       div.style.width = "1000px";
       document.body.appendChild(div);
       
-      div.innerHTML = text;
-
-      // Use invisible zero-width spaces (\u200B) to mark bold text for the CHAT button
-      div.querySelectorAll("b, strong").forEach(el => {
-        const t = el.innerText.trim();
-        if (t) el.innerText = `\u200B${t}\u200B`;
-      });
+      // Escape iframes to prevent them from breaking the text extraction
+      div.innerHTML = text.replace(/<iframe/gi, "&lt;iframe");
 
       // Standard block display without manual newline insertion
       div.querySelectorAll("p, div, li, tr, h1, h2, h3, h4").forEach((el) => {
@@ -1474,8 +1469,6 @@
         text = stripHtml(text);
       }
 
-      // Convert Invisible Bold Markers (\u200B) to Brackets
-      text = text.replace(/\u200B(.*?)\u200B/g, "【$1】");
       // Remove any stray markers
       text = text.replace(/\u200B/g, "");
 
@@ -1512,9 +1505,8 @@
           }
         }
 
-        // Smarter heading detection: short lines, emphasized lines, or keyword lines
-        const isEmphasized = line.startsWith("【") && line.endsWith("】");
-        const isHeading = headingRegex.test(line) || keywordHeadingRegex.test(line) || isEmphasized || (line.length < 25 && (!line.includes("。") || line.length < 15));
+        // Smarter heading detection: short lines, or keyword lines
+        const isHeading = headingRegex.test(line) || keywordHeadingRegex.test(line) || (line.length < 25 && (!line.includes("。") || line.length < 15));
         
         const isList = listRegex.test(line);
         const isTime = timeRegex.test(line);
@@ -1563,7 +1555,7 @@
           continue;
         }
         
-        const isStrongHeading = headingRegex.test(trimmed) || keywordHeadingRegex.test(trimmed) || (trimmed.startsWith("【") && trimmed.endsWith("】"));
+        const isStrongHeading = headingRegex.test(trimmed) || keywordHeadingRegex.test(trimmed);
         
         // Spacing above items
         if (i > 0 && (isStrongHeading || listRegex.test(trimmed) || labelRegex.test(trimmed)) && processed[processed.length - 1] !== "") {
