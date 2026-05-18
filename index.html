@@ -972,7 +972,7 @@
       </div>
 
       <div class="status-row">
-        <div class="status" id="status" style="flex:1; border:none; background:none; padding:0;">SYSTEM READY (v17.5)</div>
+        <div class="status" id="status" style="flex:1; border:none; background:none; padding:0;">SYSTEM READY (v17.6)</div>
         <div class="char-count" id="charCount">CHARS: 0</div>
       </div>
     </section>
@@ -1693,9 +1693,16 @@
       if (typeof updateCharCount === "function") updateCharCount();
       saveState(activeTheme);
       if (!editor.disabled) editor.focus();
+      if (editorContainer.classList.contains("preview-mode")) {
+        updatePreview();
+      }
     }
 
     function addTab() {
+      if (tabs.length >= 16) {
+        setStatus("MAX TABS LIMIT REACHED");
+        return;
+      }
       const newId = generateTabId();
       let maxNum = 0;
       tabs.forEach(t => {
@@ -1708,6 +1715,15 @@
       const newIndex = maxNum + 1;
       const newTab = { id: newId, label: `TAB ${String(newIndex).padStart(2, "0")}`, text: "", filename: null, originalText: "" };
       tabs.push(newTab);
+
+      if (editorContainer.classList.contains("preview-mode")) {
+        editorContainer.classList.remove("preview-mode");
+        togglePreviewBtn.setAttribute("aria-pressed", "false");
+        togglePreviewBtn.style.background = "var(--surface)";
+        togglePreviewBtn.style.color = "var(--accent)";
+        togglePreviewBtn.style.borderColor = "var(--accent)";
+      }
+
       switchTab(newId);
     }
 
@@ -1852,7 +1868,7 @@
     applyTypography();
     renderTabs();
     renderSnapshots();
-    setStatus("SYSTEM READY (v17.5)");
+    setStatus("SYSTEM READY (v17.6)");
 
     document.querySelectorAll(".theme-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -1990,6 +2006,10 @@
         if (activeTabId === null) {
           addTab();
         } else if (editor.value.trim() !== "") {
+          if (tabs.length >= 16) {
+            setStatus("MAX TABS LIMIT REACHED");
+            return;
+          }
           addTab();
         }
         
