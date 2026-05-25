@@ -813,12 +813,6 @@
         <span class="mini-label">SIZE</span>
         <span class="mini-value" id="miniSizeVal">16PX</span>
         <div class="mini-sep"></div>
-        <input type="text" id="miniFind" class="mini-input" placeholder="FIND">
-        <input type="text" id="miniReplace" class="mini-input" placeholder="REP">
-        <button class="mini-btn-box" id="miniNextBtn">NEXT</button>
-        <button class="mini-btn-box" id="miniReplaceBtn">SET</button>
-        <div class="mini-sep"></div>
-        <div class="mini-sep"></div>
         <button class="mini-btn-box" id="miniAlignL" title="LEFT">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="17" y1="10" x2="3" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="17" y1="18" x2="3" y2="18"></line></svg>
         </button>
@@ -842,7 +836,7 @@
         <button class="mini-btn-box" id="miniUnifyBtn" title="UNIFY">UNI</button>
         <button class="mini-btn-box" id="miniQuoteBtn" title="QUOTE">QT</button>
         <button class="mini-btn-box" id="miniChatBtn" title="CHAT">CHT</button>
-        <div class="mini-sep"></div>
+        <div class="mini-sep" style="margin-left: auto;"></div>
         <div class="mini-dots" id="miniDots">
           <div class="mini-dot" data-theme="dark" style="background:#8ea3c7" title="Dark"></div>
           <div class="mini-dot" data-theme="light" style="background:#e8edf7" title="Light"></div>
@@ -850,7 +844,12 @@
           <div class="mini-dot" data-theme="gray" style="background:#b0b8c4" title="Gray"></div>
           <div class="mini-dot" data-theme="red" style="background:#c5aa88" title="Red"></div>
         </div>
-        <button class="mini-btn-box mini-exit" id="miniExitBtn">EXIT FOCUS</button>
+        <button class="mini-btn-box mini-exit" id="miniExitBtn" style="margin-left: 0;">EXIT FOCUS</button>
+        <div class="mini-sep"></div>
+        <input type="text" id="miniFind" class="mini-input" placeholder="FIND">
+        <input type="text" id="miniReplace" class="mini-input" placeholder="REP">
+        <button class="mini-btn-box" id="miniNextBtn">NEXT</button>
+        <button class="mini-btn-box" id="miniReplaceBtn">SET</button>
       </div>
 
       <div class="control span-2">
@@ -964,17 +963,15 @@
 
         <div class="compact-control">
           <div class="label-row">
-            <label>07 HISTORY SNAPSHOT</label>
-            <button id="snapshotBtn" class="mini-btn" type="button" style="height: 22px; min-height: 22px; padding: 0 8px; font-size: 10px;">SNAPSHOT</button>
+            <label>07 INFORMATION PANEL</label>
+            <div class="char-count" id="charCount">CHARS: 0</div>
           </div>
-          <div id="snapshotList" class="snapshot-list"></div>
+          <div class="status" id="status" style="border:none; background:none; padding:0; line-height: 1.4;">SYSTEM READY</div>
+          <div id="snapshotList" style="display: none;"></div>
+          <button id="snapshotBtn" style="display: none;"></button>
         </div>
       </div>
 
-      <div class="status-row">
-        <div class="status" id="status" style="flex:1; border:none; background:none; padding:0;">SYSTEM READY (v17.6)</div>
-        <div class="char-count" id="charCount">CHARS: 0</div>
-      </div>
     </section>
 
     <section class="panel editor-wrap">
@@ -1868,7 +1865,7 @@
     applyTypography();
     renderTabs();
     renderSnapshots();
-    setStatus("SYSTEM READY (v17.6)");
+    setStatus("SYSTEM READY (v18)");
 
     document.querySelectorAll(".theme-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
