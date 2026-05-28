@@ -49,10 +49,10 @@
       width: min(1320px, 100%);
       height: 100%; /* Lock to viewport height */
       margin: 0 auto;
-      padding: 24px;
+      padding: 12px 16px;
       display: grid;
       grid-template-rows: auto 1fr auto;
-      gap: 18px;
+      gap: 12px;
       transition: grid-template-rows 160ms linear;
     }
 
@@ -64,10 +64,10 @@
     }
 
     .toolbar {
-      padding: 16px;
+      padding: 12px;
       display: grid;
       grid-template-columns: repeat(12, minmax(0, 1fr));
-      gap: 14px;
+      gap: 10px;
       align-items: start;
       transition: opacity 140ms linear, max-height 180ms linear, padding 180ms linear, margin 180ms linear;
     }
@@ -101,8 +101,8 @@
     .control {
       min-width: 0;
       display: grid;
-      gap: 8px;
-      padding: 10px 10px 12px;
+      gap: 6px;
+      padding: 8px 10px 8px;
       border: 1px solid var(--border);
       background: var(--surface-2);
       box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2);
@@ -198,11 +198,11 @@
     }
 
     select {
-      height: 38px;
+      height: 24px;
       font-family: var(--title-font);
-      font-size: 12px;
+      font-size: 11px;
       letter-spacing: 0.04em;
-      padding: 6px 8px;
+      padding: 0 4px;
       text-transform: uppercase;
     }
 
@@ -213,7 +213,7 @@
     }
 
     .theme-btn {
-      height: 36px;
+      height: 28px;
       font-family: var(--title-font);
       font-size: 11px;
       font-weight: 700;
@@ -231,7 +231,7 @@
     }
 
     .paper-btn {
-      height: 36px;
+      height: 28px;
       font-family: var(--title-font);
       font-size: 11px;
       font-weight: 700;
@@ -265,14 +265,14 @@
       grid-column: span 12;
       display: grid;
       grid-template-columns: 3fr 2fr;
-      gap: 14px;
+      gap: 10px;
     }
 
     .compact-control {
       min-width: 0;
       display: grid;
-      gap: 8px;
-      padding: 10px 10px 12px;
+      gap: 6px;
+      padding: 8px 10px 8px;
       border: 1px solid var(--border);
       background: var(--surface-2);
       box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2);
@@ -294,7 +294,7 @@
     }
 
     .tool-input {
-      height: 34px;
+      height: 28px;
       padding: 6px 8px;
       font-family: var(--title-font);
       font-size: 11px;
@@ -305,7 +305,7 @@
     }
 
     .mini-btn {
-      min-height: 34px;
+      min-height: 28px;
       padding: 0 10px;
       font-family: var(--title-font);
       font-size: 11px;
@@ -837,14 +837,7 @@
         <button class="mini-btn-box" id="miniQuoteBtn" title="QUOTE">QT</button>
         <button class="mini-btn-box" id="miniChatBtn" title="CHAT">CHT</button>
         <div class="mini-sep" style="margin-left: auto;"></div>
-        <div class="mini-dots" id="miniDots">
-          <div class="mini-dot" data-theme="dark" style="background:#8ea3c7" title="Dark"></div>
-          <div class="mini-dot" data-theme="light" style="background:#e8edf7" title="Light"></div>
-          <div class="mini-dot" data-theme="black" style="background:#5a5a5a" title="Black"></div>
-          <div class="mini-dot" data-theme="gray" style="background:#b0b8c4" title="Gray"></div>
-          <div class="mini-dot" data-theme="red" style="background:#c5aa88" title="Red"></div>
-        </div>
-        <button class="mini-btn-box mini-exit" id="miniExitBtn" style="margin-left: 0;">EXIT FOCUS</button>
+        <button class="mini-btn-box mini-exit" id="miniExitBtn" style="margin-left: 0; padding-left: 32px; padding-right: 32px;">EXIT FOCUS</button>
         <div class="mini-sep"></div>
         <input type="text" id="miniFind" class="mini-input" placeholder="FIND">
         <input type="text" id="miniReplace" class="mini-input" placeholder="REP">
@@ -889,8 +882,11 @@
         </select>
       </div>
 
-      <div class="control span-3" style="padding:0; border:none; background:transparent; box-shadow:none;">
-        <button class="action-btn" id="focusModeBtn" style="width:100%; height:100%;">READING FOCUS</button>
+      <div class="control span-3">
+        <div class="label-row">
+          <label>05 FOCUS</label>
+        </div>
+        <button class="action-btn" id="focusModeBtn" style="width:100%; height:24px; min-height:0; font-size:11px; padding:0; box-shadow:inset 0 -1px 0 rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center;">READING FOCUS</button>
       </div>
 
       <div class="control span-6">

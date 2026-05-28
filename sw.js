@@ -1,4 +1,4 @@
-const CACHE_NAME = "solid-square-editor-cache-v18";
+const CACHE_NAME = "solid-square-editor-cache-v19";
 const ASSETS = [
   "./",
   "./index.html",
