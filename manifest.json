@@ -1,6 +1,6 @@
 {
-  "name": "Solid Square Editor",
-  "short_name": "SquareEditor",
+  "name": "SOLID SQUARE EDITOR",
+  "short_name": "SQUARE EDITOR",
   "description": "スクエアでソリッドな大人向けPWAテキストエディタ",
   "lang": "ja",
   "start_url": "./index.html",
