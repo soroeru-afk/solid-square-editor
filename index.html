@@ -2124,7 +2124,9 @@
     const charCountEl = document.getElementById("charCount");
     function updateCharCount() {
       const len = editor.value.length;
-      charCountEl.textContent = `CHARS: ${len.toLocaleString()}`;
+      const pos = editor.selectionStart || 0;
+      const lines = editor.value.slice(0, pos).split('\n').length;
+      charCountEl.textContent = `CHARS: ${len.toLocaleString()} | LINE: ${lines.toLocaleString()}`;
     }
     editor.addEventListener("input", () => {
       updateCharCount();
@@ -2132,6 +2134,8 @@
         updatePreview();
       }
     });
+    editor.addEventListener("click", updateCharCount);
+    editor.addEventListener("keyup", updateCharCount);
     updateCharCount();
 
     // --- Mini Strip Logic ---
