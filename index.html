@@ -1609,7 +1609,8 @@
         fontFamily: fontFamily.value,
         theme: themeName,
         paperMode: paperModeBtn.getAttribute("aria-pressed") === "true",
-        isVertical: isVertical
+        isVertical: isVertical,
+        isMinimumMode: document.body.classList.contains("minimum-mode")
       }));
     }
 
@@ -1635,6 +1636,9 @@
       activeTheme = loaded.theme || "dark";
       paperModeEnabled = Boolean(loaded.paperMode);
       isVertical = Boolean(loaded.isVertical);
+      if (loaded.isMinimumMode) {
+        document.body.classList.add("minimum-mode");
+      }
       
       if (loaded.tabs && Array.isArray(loaded.tabs)) {
         tabs = loaded.tabs.map(t => {
@@ -1863,6 +1867,9 @@
     applyTypography();
     renderTabs();
     renderSnapshots();
+    if (document.body.classList.contains("minimum-mode")) {
+      focusModeBtn.textContent = "EXIT FOCUS";
+    }
     setStatus("SYSTEM READY (v18)");
 
     document.querySelectorAll(".theme-btn").forEach((btn) => {
@@ -2195,6 +2202,7 @@
        document.body.classList.remove("minimum-mode");
        focusModeBtn.textContent = "READING FOCUS";
        setStatus("MINIMUM MODE: OFF");
+       saveState(activeTheme);
     });
 
     document.querySelectorAll(".mini-dot").forEach(dot => {
@@ -2217,6 +2225,7 @@
       focusModeBtn.textContent = isMini ? "EXIT FOCUS" : "READING FOCUS";
       if (isMini) syncMiniStrip();
       setStatus(isMini ? "MINIMUM MODE: ON" : "MINIMUM MODE: OFF");
+      saveState(activeTheme);
     });
 
     if ("serviceWorker" in navigator) {
