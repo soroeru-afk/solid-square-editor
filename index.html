@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#121212">
   <meta name="description" content="スクエアでソリッドなPWAテキストエディタ">
-  <link rel="manifest" href="./manifest.json?v=20260704">
-  <link rel="icon" type="image/png" href="./icon-512.png?v=20260704">
-  <link rel="apple-touch-icon" href="./icon-192.png?v=20260704">
+  <link rel="manifest" href="./manifest.json?v=20260704_2">
+  <link rel="icon" type="image/png" href="./icon-512.png?v=20260704_2">
+  <link rel="apple-touch-icon" href="./icon-192.png?v=20260704_2">
   <title>SOLID SQUARE EDITOR</title>
   <style>
     :root {
@@ -230,6 +230,63 @@
     select option {
       background: var(--surface);
       color: var(--text);
+    }
+
+    .custom-select-container {
+      position: relative;
+      width: 100%;
+      height: 24px;
+      user-select: none;
+    }
+
+    .custom-select-trigger {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      padding: 0 6px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      font-family: var(--title-font);
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .custom-select-dropdown {
+      position: absolute;
+      top: calc(100% - 1px);
+      left: 0;
+      right: 0;
+      background: var(--panel);
+      border: 1px solid var(--border-strong);
+      z-index: 100;
+      max-height: 150px;
+      overflow-y: auto;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    }
+
+    .custom-select-option {
+      padding: 6px;
+      font-family: var(--title-font);
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      color: var(--text);
+      text-transform: uppercase;
+      transition: background 0.1s, color 0.1s;
+    }
+
+    .custom-select-option:hover {
+      background: var(--border);
+      color: var(--control-accent);
+    }
+
+    .custom-select-option.selected {
+      color: var(--control-accent);
+      background: var(--surface2);
     }
 
     .theme-buttons {
@@ -899,7 +956,20 @@
         <div class="label-row">
           <label for="fontFamily">04 FONT FAMILY</label>
         </div>
-        <select id="fontFamily">
+        <div class="custom-select-container" id="fontFamilySelect">
+          <div class="custom-select-trigger">
+            <span class="custom-select-value">MEIRYO</span>
+            <span class="custom-select-arrow">▼</span>
+          </div>
+          <div class="custom-select-dropdown" style="display: none;">
+            <div class="custom-select-option selected" data-value="Meiryo, sans-serif">MEIRYO</div>
+            <div class="custom-select-option" data-value="'MS Gothic', monospace">MS GOTHIC</div>
+            <div class="custom-select-option" data-value="system-ui, sans-serif">SYSTEM UI</div>
+            <div class="custom-select-option" data-value="'Yu Gothic UI', sans-serif">YU GOTHIC UI</div>
+            <div class="custom-select-option" data-value="'Consolas', monospace">CONSOLAS</div>
+          </div>
+        </div>
+        <select id="fontFamily" style="display: none;">
           <option value="Meiryo, sans-serif">MEIRYO</option>
           <option value="'MS Gothic', monospace">MS GOTHIC</option>
           <option value="system-ui, sans-serif">SYSTEM UI</option>
@@ -1098,6 +1168,49 @@
     const findNextBtn = document.getElementById("findNextBtn");
     const replaceOneBtn = document.getElementById("replaceOneBtn");
     const replaceAllBtn = document.getElementById("replaceAllBtn");
+
+    // Custom select dropdown logic
+    const fontFamilySelect = document.getElementById("fontFamilySelect");
+    const selectTrigger = fontFamilySelect.querySelector(".custom-select-trigger");
+    const selectValue = fontFamilySelect.querySelector(".custom-select-value");
+    const selectDropdown = fontFamilySelect.querySelector(".custom-select-dropdown");
+    const selectOptions = fontFamilySelect.querySelectorAll(".custom-select-option");
+
+    selectTrigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const open = selectDropdown.style.display !== "none";
+      selectDropdown.style.display = open ? "none" : "block";
+    });
+
+    selectOptions.forEach(opt => {
+      opt.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const value = opt.dataset.value;
+        const label = opt.textContent;
+        
+        selectValue.textContent = label;
+        selectOptions.forEach(o => o.classList.remove("selected"));
+        opt.classList.add("selected");
+        selectDropdown.style.display = "none";
+        
+        fontFamily.value = value;
+        fontFamily.dispatchEvent(new Event("change"));
+      });
+    });
+
+    document.addEventListener("click", () => {
+      selectDropdown.style.display = "none";
+    });
+
+    function syncCustomSelect() {
+      const currentVal = fontFamily.value;
+      const option = Array.from(selectOptions).find(o => o.dataset.value === currentVal);
+      if (option) {
+        selectValue.textContent = option.textContent;
+        selectOptions.forEach(o => o.classList.remove("selected"));
+        option.classList.add("selected");
+      }
+    }
     const allClearBtn = document.getElementById("allClearBtn");
     const stripHtmlBtn = document.getElementById("stripHtmlBtn");
     const toggleCaseBtn = document.getElementById("toggleCaseBtn");
@@ -1908,6 +2021,7 @@
     applyPaperMode(paperModeEnabled);
     applyWritingMode(isVertical);
     applyTypography();
+    syncCustomSelect();
     renderTabs();
     renderSnapshots();
     if (document.body.classList.contains("minimum-mode")) {
