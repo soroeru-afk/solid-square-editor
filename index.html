@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#121212">
   <meta name="description" content="スクエアでソリッドなPWAテキストエディタ">
-  <link rel="manifest" href="./manifest.json?v=20260625">
-  <link rel="icon" type="image/png" href="./icon-512.png?v=20260625">
-  <link rel="apple-touch-icon" href="./icon-192.png?v=20260625">
+  <link rel="manifest" href="./manifest.json?v=20260704">
+  <link rel="icon" type="image/png" href="./icon-512.png?v=20260704">
+  <link rel="apple-touch-icon" href="./icon-192.png?v=20260704">
   <title>SOLID SQUARE EDITOR</title>
   <style>
     :root {
@@ -28,6 +28,7 @@
       --editor-border: #363636;
       --editor-shadow-top: rgba(255, 255, 255, 0.02);
       --editor-shadow-bottom: rgba(0, 0, 0, 0.45);
+      --slider-thumb-bg: var(--control-accent);
     }
 
     * {
@@ -179,10 +180,18 @@
       -webkit-appearance: none;
       width: 12px;
       height: 12px;
-      background: var(--control-accent);
+      background: var(--slider-thumb-bg, var(--control-accent));
       border: 1px solid var(--border);
       margin-top: -5px;
       box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.45);
+    }
+
+    [data-theme="red"] .solid-slider::-webkit-slider-thumb {
+      background: #ffffff !important;
+    }
+
+    [data-paper-mode="true"] .solid-slider::-webkit-slider-thumb {
+      background: #ffffff !important;
     }
 
     .solid-slider::-moz-range-track {
@@ -195,8 +204,16 @@
       width: 12px;
       height: 12px;
       border: 1px solid var(--border);
-      background: var(--control-accent);
+      background: var(--slider-thumb-bg, var(--control-accent));
       box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.45);
+    }
+
+    [data-theme="red"] .solid-slider::-moz-range-thumb {
+      background: #ffffff !important;
+    }
+
+    [data-paper-mode="true"] .solid-slider::-moz-range-thumb {
+      background: #ffffff !important;
     }
 
     select {
@@ -206,6 +223,13 @@
       letter-spacing: 0.04em;
       padding: 0 4px;
       text-transform: uppercase;
+      background: var(--surface);
+      color: var(--text);
+    }
+
+    select option {
+      background: var(--surface);
+      color: var(--text);
     }
 
     .theme-buttons {
@@ -1040,16 +1064,16 @@
         borderStrong: "#99a5b8"
       },
       red: {
-        bg: "#151212",
-        panel: "#1f1818",
-        surface: "#2b2222",
-        surface2: "#241d1d",
-        text: "#f0e9e9",
-        muted: "#b9a8a8",
-        accent: "#c5aa88",
-        controlAccent: "#c5aa88",
-        border: "#443232",
-        borderStrong: "#5a3f3f"
+        bg: "#110606",
+        panel: "#180909",
+        surface: "#240d0d",
+        surface2: "#1e0b0b",
+        text: "#ffffff",
+        muted: "#a65c5c",
+        accent: "#c85a5a",
+        controlAccent: "#c85a5a",
+        border: "#5c1a1a",
+        borderStrong: "#822525"
       }
     };
 
@@ -1125,7 +1149,9 @@
     }
 
     function applyTheme(name) {
+      activeTheme = name;
       const t = THEMES[name] || THEMES.dark;
+      root.setAttribute("data-theme", name);
       root.style.setProperty("--bg", t.bg);
       root.style.setProperty("--panel", t.panel);
       root.style.setProperty("--surface", t.surface);
@@ -1140,23 +1166,40 @@
       document.querySelectorAll(".theme-btn").forEach((btn) => {
         btn.setAttribute("aria-pressed", String(btn.dataset.theme === name));
       });
+      updateEditorColors();
     }
 
     function applyPaperMode(enabled) {
-      if (enabled) {
+      paperModeEnabled = enabled;
+      root.setAttribute("data-paper-mode", String(enabled));
+      updateEditorColors();
+      paperModeBtn.setAttribute("aria-pressed", String(enabled));
+    }
+
+    function updateEditorColors() {
+      const t = THEMES[activeTheme] || THEMES.dark;
+      if (paperModeEnabled) {
         root.style.setProperty("--editor-bg", "#f4f4f4");
         root.style.setProperty("--editor-text", "#141414");
         root.style.setProperty("--editor-border", "#cecece");
         root.style.setProperty("--editor-shadow-top", "rgba(255, 255, 255, 0.75)");
         root.style.setProperty("--editor-shadow-bottom", "rgba(0, 0, 0, 0.08)");
+        root.style.setProperty("--slider-thumb-bg", "var(--control-accent)");
+      } else if (activeTheme === "red") {
+        root.style.setProperty("--editor-bg", t.panel);
+        root.style.setProperty("--editor-text", t.text);
+        root.style.setProperty("--editor-border", t.border);
+        root.style.setProperty("--editor-shadow-top", "rgba(255, 255, 255, 0.02)");
+        root.style.setProperty("--editor-shadow-bottom", "rgba(0, 0, 0, 0.45)");
+        root.style.setProperty("--slider-thumb-bg", "#ffffff");
       } else {
         root.style.setProperty("--editor-bg", "#171717");
         root.style.setProperty("--editor-text", "#f0f0f0");
         root.style.setProperty("--editor-border", "#363636");
         root.style.setProperty("--editor-shadow-top", "rgba(255, 255, 255, 0.02)");
         root.style.setProperty("--editor-shadow-bottom", "rgba(0, 0, 0, 0.45)");
+        root.style.setProperty("--slider-thumb-bg", "var(--control-accent)");
       }
-      paperModeBtn.setAttribute("aria-pressed", String(enabled));
     }
 
     function applyTypography() {
