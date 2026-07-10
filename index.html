@@ -1027,7 +1027,7 @@
           <label>05 THEME BANK</label>
         </div>
         <div class="theme-buttons">
-          <button class="theme-btn" data-theme="dark" aria-pressed="true">Dark</button>
+          <button class="theme-btn" data-theme="navy" aria-pressed="true">Navy</button>
           <button class="theme-btn" data-theme="light" aria-pressed="false">Light</button>
           <button class="theme-btn" data-theme="black" aria-pressed="false">Black</button>
           <button class="theme-btn" data-theme="gray" aria-pressed="false">Gray</button>
@@ -1085,17 +1085,17 @@
 
   <script>
     const THEMES = {
-      dark: {
-        bg: "#121722",
-        panel: "#191f2c",
-        surface: "#212a38",
-        surface2: "#1b2432",
-        text: "#e8edf7",
-        muted: "#8f98aa",
-        accent: "#8ea3c7",
-        controlAccent: "#8ea3c7",
-        border: "#303b4c",
-        borderStrong: "#435167"
+      navy: {
+        bg: "#0a0f18",
+        panel: "#0f1623",
+        surface: "#172132",
+        surface2: "#121a28",
+        text: "#c4d1e6",
+        muted: "#7887a3",
+        accent: "#6c93d6",
+        controlAccent: "#6c93d6",
+        border: "#253147",
+        borderStrong: "#354561"
       },
       light: {
         bg: "#eceff3",
@@ -1111,9 +1111,9 @@
       },
       black: {
         bg: "#121212",
-        panel: "#1b1b1b",
-        surface: "#232323",
-        surface2: "#1f1f1f",
+        panel: "#141414",
+        surface: "#161616",
+        surface2: "#121212",
         text: "#ececec",
         muted: "#9b9b9b",
         accent: "#8a8f99",
@@ -1262,8 +1262,9 @@
     }
 
     function applyTheme(name) {
+      if (name === "dark") name = "navy";
       activeTheme = name;
-      const t = THEMES[name] || THEMES.dark;
+      const t = THEMES[name] || THEMES.navy;
       root.setAttribute("data-theme", name);
       root.style.setProperty("--bg", t.bg);
       root.style.setProperty("--panel", t.panel);
@@ -1290,7 +1291,7 @@
     }
 
     function updateEditorColors() {
-      const t = THEMES[activeTheme] || THEMES.dark;
+      const t = THEMES[activeTheme] || THEMES.navy;
       if (paperModeEnabled) {
         root.style.setProperty("--editor-bg", "#f4f4f4");
         root.style.setProperty("--editor-text", "#141414");
@@ -1780,7 +1781,7 @@
       }
     }
 
-    let activeTheme = "dark";
+    let activeTheme = "navy";
     let paperModeEnabled = false;
     const loaded = loadState();
     
@@ -1789,7 +1790,7 @@
       fontWeight.value = loaded.fontWeight || "400";
       lineHeight.value = loaded.lineHeight || "1.6";
       fontFamily.value = loaded.fontFamily || "Meiryo, sans-serif";
-      activeTheme = loaded.theme || "dark";
+      activeTheme = loaded.theme || "navy";
       paperModeEnabled = Boolean(loaded.paperMode);
       isVertical = Boolean(loaded.isVertical);
       if (loaded.isMinimumMode) {
