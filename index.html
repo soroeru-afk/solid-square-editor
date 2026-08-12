@@ -916,8 +916,7 @@
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="10" x2="7" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="21" y1="18" x2="7" y2="18"></line></svg>
         </button>
         <div class="mini-sep"></div>
-        <button class="mini-btn-box" id="miniStripHtmlBtn" title="STRIP HTML">STRIP</button>
-        <button class="mini-btn-box" id="miniToggleCaseBtn" title="UPPER / LOWER" style="text-transform: none;">A/a</button>
+                <button class="mini-btn-box" id="miniToggleCaseBtn" title="UPPER / LOWER" style="text-transform: none;">A/a</button>
         <button class="mini-btn-box" id="miniToggleZenHanBtn" title="ZEN / HAN">半/全</button>
         <button class="mini-btn-box" id="miniToggleHiraKataBtn" title="HIRA / KATA">あ/ア</button>
         <div class="mini-sep"></div>
@@ -927,7 +926,8 @@
         <div class="mini-sep"></div>
         <button class="mini-btn-box" id="miniCleanBtn" title="CLEAN">CLN</button>
         <button class="mini-btn-box" id="miniUnifyBtn" title="UNIFY">UNI</button>
-        <button class="mini-btn-box" id="miniQuoteBtn" title="QUOTE">QT</button>
+        <button class="mini-btn-box" id="miniUndoBtn" title="UNDO">UNDO</button>
+        <button class="mini-btn-box" id="miniRedoBtn" title="REDO">REDO</button>
         <button class="mini-btn-box" id="miniChatBtn" title="CHAT">CHT</button>
         <div class="mini-sep" style="margin-left: auto;"></div>
         <button class="mini-btn-box mini-exit" id="miniExitBtn" style="margin-left: 0; padding-left: 32px; padding-right: 32px;">EXIT FOCUS</button>
@@ -1024,11 +1024,11 @@
         <div class="label-row">
           <label>09 LINE TOOLS</label>
         </div>
-        <div class="transform-buttons" style="grid-template-columns: repeat(2, 1fr);">
-          <button id="cleanBtn" class="mini-btn" title="空行集約とトリミング">CLEAN</button>
-          <button id="unifyBtn" class="mini-btn" title="全角スペースを半角に">UNIFY</button>
-          <button id="quoteBtn" class="mini-btn" title="各行に引用符を付与">QUOTE</button>
+                <div class="transform-buttons" style="grid-template-columns: repeat(2, 1fr);">
+          <button id="unifyBtn" class="mini-btn" title="全角スペースを半角へ">UNIFY</button>
           <button id="chatBtn" class="mini-btn" title="チャットログの整形">CHAT</button>
+          <button id="undoBtn" class="mini-btn" title="元に戻す">UNDO</button>
+          <button id="redoBtn" class="mini-btn" title="やり直し">REDO</button>
         </div>
       </div>
 
@@ -1222,7 +1222,6 @@
       }
     }
     const allClearBtn = document.getElementById("allClearBtn");
-    const stripHtmlBtn = document.getElementById("stripHtmlBtn");
     const toggleCaseBtn = document.getElementById("toggleCaseBtn");
     const toggleZenHanBtn = document.getElementById("toggleZenHanBtn");
     const toggleHiraKataBtn = document.getElementById("toggleHiraKataBtn");
@@ -1238,14 +1237,16 @@
     
     const cleanBtn = document.getElementById("cleanBtn");
     const unifyBtn = document.getElementById("unifyBtn");
-    const quoteBtn = document.getElementById("quoteBtn");
+    const undoBtn = document.getElementById("undoBtn");
+    const redoBtn = document.getElementById("redoBtn");
     const chatBtn = document.getElementById("chatBtn");
     const miniAlignL = document.getElementById("miniAlignL");
     const miniAlignC = document.getElementById("miniAlignC");
     const miniAlignR = document.getElementById("miniAlignR");
     const miniCleanBtn = document.getElementById("miniCleanBtn");
     const miniUnifyBtn = document.getElementById("miniUnifyBtn");
-    const miniQuoteBtn = document.getElementById("miniQuoteBtn");
+    const miniUndoBtn = document.getElementById("miniUndoBtn");
+    const miniRedoBtn = document.getElementById("miniRedoBtn");
     const miniChatBtn = document.getElementById("miniChatBtn");
     const htmlModeBtn = document.getElementById("htmlModeBtn");
     const miniHtmlModeBtn = document.getElementById("miniHtmlModeBtn");
@@ -1495,7 +1496,10 @@
       const end = editor.selectionEnd;
       const selected = editor.value.slice(start, end);
       if (selected === needle) {
-        editor.setRangeText(replacement, start, end, "end");
+        editor.focus();
+        editor.setSelectionRange(start, end);
+        document.execCommand('insertText', false, replacement);
+        findCursor = start + replacement.length;
         saveState(activeTheme);
         setStatus("ONE MATCH REPLACED");
         return;
@@ -1516,7 +1520,14 @@
         setStatus("NO MATCH FOR REPLACE ALL");
         return;
       }
-      editor.value = editor.value.replace(reg, replacement);
+      const newText = editor.value.replace(reg, replacement);
+      const start = editor.selectionStart;
+      editor.focus();
+      editor.setSelectionRange(0, editor.value.length);
+      document.execCommand('insertText', false, newText);
+      requestAnimationFrame(() => {
+        editor.setSelectionRange(start, start);
+      });
       saveState(activeTheme);
       setStatus(`REPLACED: ${matches.length}`);
     }
@@ -1525,13 +1536,23 @@
       const start = editor.selectionStart;
       const end = editor.selectionEnd;
       const text = editor.value;
+      editor.focus();
 
       if (start !== end) {
         const selected = text.slice(start, end);
         const transformed = transformFn(selected);
-        editor.setRangeText(transformed, start, end, "end");
+        editor.setSelectionRange(start, end);
+        document.execCommand('insertText', false, transformed);
+        requestAnimationFrame(() => {
+          editor.setSelectionRange(start, start + transformed.length);
+        });
       } else {
-        editor.value = transformFn(text);
+        const transformed = transformFn(text);
+        editor.setSelectionRange(0, text.length);
+        document.execCommand('insertText', false, transformed);
+        requestAnimationFrame(() => {
+          editor.setSelectionRange(start, start);
+        });
       }
       
       saveState(activeTheme);
@@ -2234,7 +2255,18 @@
       setStatus(`SNAPSHOT SAVED: ${String(snapshots.length).padStart(2, "0")}`);
     });
 
-    findNextBtn.addEventListener("click", findNext);
+    [findInput, replaceInput, miniFind, miniReplace].forEach(input => {
+      input.addEventListener('drop', (e) => {
+        e.preventDefault();
+        input.value = e.dataTransfer.getData("text/plain");
+        if (input.id === "findInput" || input.id === "miniFind") { findInput.value = input.value; miniFind.value = input.value; }
+        if (input.id === "replaceInput" || input.id === "miniReplace") { replaceInput.value = input.value; miniReplace.value = input.value; }
+      });
+      input.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "copy";
+      });
+    });\n    findNextBtn.addEventListener("click", findNext);
     replaceOneBtn.addEventListener("click", replaceCurrent);
     replaceAllBtn.addEventListener("click", replaceAll);
     allClearBtn.addEventListener("click", () => {
@@ -2246,8 +2278,7 @@
       setStatus("FIND/REPLACE & SNAPSHOT CLEARED");
     });
 
-    stripHtmlBtn.addEventListener("click", () => transformText(stripHtml));
-    toggleCaseBtn.addEventListener("click", () => transformText(toggleCase));
+        toggleCaseBtn.addEventListener("click", () => transformText(toggleCase));
     toggleZenHanBtn.addEventListener("click", () => transformText(toggleZenHan));
     toggleHiraKataBtn.addEventListener("click", () => transformText(toggleHiraKata));
 
@@ -2269,8 +2300,34 @@
 
     cleanBtn.addEventListener("click", () => transformText(cleanText));
     unifyBtn.addEventListener("click", () => transformText(unifySpaces));
-    quoteBtn.addEventListener("click", () => transformText(quoteText));
-    chatBtn.addEventListener("click", () => transformText(cleanupChat));
+    function handleUndo() {
+      const beforeUndoLength = editor.value.length;
+      editor.focus();
+      document.execCommand('undo', false, null);
+      const afterUndoLength = editor.value.length;
+      if (editor.selectionStart === afterUndoLength && editor.selectionEnd === afterUndoLength && Math.abs(afterUndoLength - beforeUndoLength) > 10) {
+        editor.setSelectionRange(0, 0);
+        editor.scrollTop = 0;
+      }
+      setStatus("UNDO");
+    }
+
+    function handleRedo() {
+      const beforeRedoLength = editor.value.length;
+      editor.focus();
+      document.execCommand('redo', false, null);
+      const afterRedoLength = editor.value.length;
+      if (editor.selectionStart === afterRedoLength && editor.selectionEnd === afterRedoLength && Math.abs(afterRedoLength - beforeRedoLength) > 10) {
+        editor.setSelectionRange(0, 0);
+        editor.scrollTop = 0;
+      }
+      setStatus("REDO");
+    }
+
+    undoBtn.addEventListener("click", handleUndo);
+    redoBtn.addEventListener("click", handleRedo);
+
+        chatBtn.addEventListener("click", () => transformText(cleanupChat));
 
     togglePreviewBtn.addEventListener("click", () => {
       const isPreview = editorContainer.classList.toggle("preview-mode");
@@ -2322,7 +2379,6 @@
     const miniNextBtn = document.getElementById("miniNextBtn");
     const miniReplaceBtn = document.getElementById("miniReplaceBtn");
     const miniExitBtn = document.getElementById("miniExitBtn");
-    const miniStripHtmlBtn = document.getElementById("miniStripHtmlBtn");
     const miniToggleCaseBtn = document.getElementById("miniToggleCaseBtn");
     const miniToggleZenHanBtn = document.getElementById("miniToggleZenHanBtn");
     const miniToggleHiraKataBtn = document.getElementById("miniToggleHiraKataBtn");
@@ -2341,8 +2397,7 @@
     miniReplace.addEventListener("input", () => { replaceInput.value = miniReplace.value; });
     miniNextBtn.addEventListener("click", findNext);
     miniReplaceBtn.addEventListener("click", replaceCurrent);
-    miniStripHtmlBtn.addEventListener("click", () => transformText(stripHtml));
-    miniToggleCaseBtn.addEventListener("click", () => transformText(toggleCase));
+        miniToggleCaseBtn.addEventListener("click", () => transformText(toggleCase));
     miniToggleZenHanBtn.addEventListener("click", () => transformText(toggleZenHan));
     miniToggleHiraKataBtn.addEventListener("click", () => transformText(toggleHiraKata));
     miniAlignL.addEventListener("click", () => {
@@ -2362,8 +2417,9 @@
     });
     miniCleanBtn.addEventListener("click", () => transformText(cleanText));
     miniUnifyBtn.addEventListener("click", () => transformText(unifySpaces));
-    miniQuoteBtn.addEventListener("click", () => transformText(quoteText));
-    miniChatBtn.addEventListener("click", () => transformText(cleanupChat));
+    miniUndoBtn.addEventListener("click", handleUndo);
+    miniRedoBtn.addEventListener("click", handleRedo);
+        miniChatBtn.addEventListener("click", () => transformText(cleanupChat));
     miniTogglePreviewBtn.addEventListener("click", () => togglePreviewBtn.click());
 
     miniExitBtn.addEventListener("click", () => {
