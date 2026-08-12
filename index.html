@@ -1498,7 +1498,13 @@
       if (selected === needle) {
         editor.focus();
         editor.setSelectionRange(start, end);
-        document.execCommand('insertText', false, replacement);
+        try {
+          if (!document.execCommand('insertText', false, replacement) || (replacement !== selected && editor.value.slice(start, end) === selected)) {
+            editor.setRangeText(replacement, start, end, "end");
+          }
+        } catch(e) {
+          editor.setRangeText(replacement, start, end, "end");
+        }
         findCursor = start + replacement.length;
         saveState(activeTheme);
         setStatus("ONE MATCH REPLACED");
@@ -1520,11 +1526,18 @@
         setStatus("NO MATCH FOR REPLACE ALL");
         return;
       }
+      const oldText = editor.value;
       const newText = editor.value.replace(reg, replacement);
       const start = editor.selectionStart;
       editor.focus();
       editor.setSelectionRange(0, editor.value.length);
-      document.execCommand('insertText', false, newText);
+      try {
+        if (!document.execCommand('insertText', false, newText) || (newText !== oldText && editor.value === oldText)) {
+          editor.value = newText;
+        }
+      } catch(e) {
+        editor.value = newText;
+      }
       requestAnimationFrame(() => {
         editor.setSelectionRange(start, start);
       });
@@ -1542,14 +1555,26 @@
         const selected = text.slice(start, end);
         const transformed = transformFn(selected);
         editor.setSelectionRange(start, end);
-        document.execCommand('insertText', false, transformed);
+        try {
+          if (!document.execCommand('insertText', false, transformed) || (transformed !== selected && editor.value === text)) {
+            editor.setRangeText(transformed, start, end, "end");
+          }
+        } catch(e) {
+          editor.setRangeText(transformed, start, end, "end");
+        }
         requestAnimationFrame(() => {
           editor.setSelectionRange(start, start + transformed.length);
         });
       } else {
         const transformed = transformFn(text);
         editor.setSelectionRange(0, text.length);
-        document.execCommand('insertText', false, transformed);
+        try {
+          if (!document.execCommand('insertText', false, transformed) || (transformed !== text && editor.value === text)) {
+            editor.value = transformed;
+          }
+        } catch(e) {
+          editor.value = transformed;
+        }
         requestAnimationFrame(() => {
           editor.setSelectionRange(start, start);
         });
