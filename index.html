@@ -1486,6 +1486,7 @@
     }
 
     function replaceCurrent() {
+      pushHistory();
       const needle = findInput.value;
       if (!needle) {
         setStatus("FIND KEYWORD IS EMPTY");
@@ -1514,6 +1515,7 @@
     }
 
     function replaceAll() {
+      pushHistory();
       const needle = findInput.value;
       if (!needle) {
         setStatus("TARGET KEYWORD IS EMPTY");
@@ -1546,6 +1548,7 @@
     }
 
     function transformText(transformFn) {
+      pushHistory();
       const start = editor.selectionStart;
       const end = editor.selectionEnd;
       const text = editor.value;
@@ -2314,28 +2317,63 @@
 
     cleanBtn.addEventListener("click", () => transformText(cleanText));
     unifyBtn.addEventListener("click", () => transformText(unifySpaces));
-    function handleUndo() {
-      const beforeUndoLength = editor.value.length;
-      editor.focus();
-      document.execCommand('undo', false, null);
-      const afterUndoLength = editor.value.length;
-      if (editor.selectionStart === afterUndoLength && editor.selectionEnd === afterUndoLength && Math.abs(afterUndoLength - beforeUndoLength) > 10) {
-        editor.setSelectionRange(0, 0);
-        editor.scrollTop = 0;
+    const customHistory = [];
+    let customHistoryIndex = -1;
+    let isHistoryRestoring = false;
+
+    function pushHistory() {
+      if (isHistoryRestoring) return;
+      const state = {
+        val: editor.value,
+        start: editor.selectionStart,
+        end: editor.selectionEnd,
+        scrollTop: editor.scrollTop
+      };
+      if (customHistoryIndex >= 0 && customHistory[customHistoryIndex].val === state.val) return;
+      customHistory.splice(customHistoryIndex + 1);
+      customHistory.push(state);
+      if (customHistory.length > 50) {
+        customHistory.shift();
+      } else {
+        customHistoryIndex++;
       }
-      setStatus("UNDO");
+    }
+
+    let typingTimer;
+    editor.addEventListener('input', () => {
+      clearTimeout(typingTimer);
+      typingTimer = setTimeout(pushHistory, 400);
+    });
+
+    function applyHistoryState(state) {
+      isHistoryRestoring = true;
+      editor.value = state.val;
+      editor.setSelectionRange(state.start, state.end);
+      editor.scrollTop = state.scrollTop;
+      saveState(activeTheme);
+      updateCharCount();
+      isHistoryRestoring = false;
+    }
+
+    function handleUndo() {
+      if (customHistoryIndex > 0) {
+        if (customHistory[customHistoryIndex].val !== editor.value) {
+            pushHistory();
+        }
+        if (customHistoryIndex > 0) {
+            customHistoryIndex--;
+            applyHistoryState(customHistory[customHistoryIndex]);
+            setStatus("UNDO");
+        }
+      }
     }
 
     function handleRedo() {
-      const beforeRedoLength = editor.value.length;
-      editor.focus();
-      document.execCommand('redo', false, null);
-      const afterRedoLength = editor.value.length;
-      if (editor.selectionStart === afterRedoLength && editor.selectionEnd === afterRedoLength && Math.abs(afterRedoLength - beforeRedoLength) > 10) {
-        editor.setSelectionRange(0, 0);
-        editor.scrollTop = 0;
+      if (customHistoryIndex < customHistory.length - 1) {
+        customHistoryIndex++;
+        applyHistoryState(customHistory[customHistoryIndex]);
+        setStatus("REDO");
       }
-      setStatus("REDO");
     }
 
     undoBtn.addEventListener("click", handleUndo);
