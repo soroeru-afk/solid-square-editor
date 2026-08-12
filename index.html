@@ -2280,18 +2280,6 @@
       setStatus(`SNAPSHOT SAVED: ${String(snapshots.length).padStart(2, "0")}`);
     });
 
-    [findInput, replaceInput, miniFind, miniReplace].forEach(input => {
-      input.addEventListener('drop', (e) => {
-        e.preventDefault();
-        input.value = e.dataTransfer.getData("text/plain");
-        if (input.id === "findInput" || input.id === "miniFind") { findInput.value = input.value; miniFind.value = input.value; }
-        if (input.id === "replaceInput" || input.id === "miniReplace") { replaceInput.value = input.value; miniReplace.value = input.value; }
-      });
-      input.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = "copy";
-      });
-    });
     findNextBtn.addEventListener("click", findNext);
     replaceOneBtn.addEventListener("click", replaceCurrent);
     replaceAllBtn.addEventListener("click", replaceAll);
@@ -2468,6 +2456,19 @@
     // Update mini values when main inputs change
     [fontSize, fontWeight, lineHeight, fontFamily].forEach(el => {
       el.addEventListener(el.tagName === "SELECT" ? "change" : "input", syncMiniStrip);
+    });
+
+        [findInput, replaceInput, miniFind, miniReplace].forEach(input => {
+      input.addEventListener('drop', (e) => {
+        e.preventDefault();
+        input.value = e.dataTransfer.getData("text/plain");
+        if (input.id === "findInput" || input.id === "miniFind") { findInput.value = input.value; miniFind.value = input.value; }
+        if (input.id === "replaceInput" || input.id === "miniReplace") { replaceInput.value = input.value; miniReplace.value = input.value; }
+      });
+      input.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "copy";
+      });
     });
 
     focusModeBtn.addEventListener("click", () => {
