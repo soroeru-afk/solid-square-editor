@@ -1003,7 +1003,7 @@
           <button id="toggleCaseBtn" class="mini-btn" type="button" style="text-transform: none;" title="大文字/小文字切替">A/a</button>
           <button id="toggleZenHanBtn" class="mini-btn" type="button" title="全角/半角切替">半/全</button>
           <button id="toggleHiraKataBtn" class="mini-btn" type="button" title="ひらがな/カタカナ切替">あ/ア</button>
-          <button id="stripHtmlBtn" class="mini-btn" type="button" title="HTMLタグを除去">STRIP</button>
+          <button id="cleanBtn" class="mini-btn" type="button" title="改行と空白トリミング">CLEAN</button>
           <button id="toggleWritingModeBtn" class="mini-btn" type="button" title="縦組/横組切替" style="color:var(--accent); border-color:var(--accent);">横/縦</button>
           
           <button id="alignLeftBtn" class="mini-btn" type="button" title="左寄せ">
@@ -2266,7 +2266,8 @@
         e.preventDefault();
         e.dataTransfer.dropEffect = "copy";
       });
-    });\n    findNextBtn.addEventListener("click", findNext);
+    });
+    findNextBtn.addEventListener("click", findNext);
     replaceOneBtn.addEventListener("click", replaceCurrent);
     replaceAllBtn.addEventListener("click", replaceAll);
     allClearBtn.addEventListener("click", () => {
