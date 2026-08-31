@@ -499,9 +499,41 @@
       border: 1px solid var(--border-strong);
       background: var(--surface);
       color: var(--muted);
-      cursor: pointer;
+      cursor: grab;
+      user-select: none;
       box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.02);
       white-space: nowrap;
+      position: relative;
+      transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+    }
+    .tab-item:active {
+      cursor: grabbing;
+    }
+    .tab-item.is-dragging {
+      opacity: 0.35;
+      border-style: dashed;
+    }
+    .tab-item.drop-before::before {
+      content: "";
+      position: absolute;
+      left: -3px;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: var(--control-accent);
+      z-index: 5;
+      box-shadow: 0 0 6px var(--control-accent);
+    }
+    .tab-item.drop-after::after {
+      content: "";
+      position: absolute;
+      right: -3px;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: var(--control-accent);
+      z-index: 5;
+      box-shadow: 0 0 6px var(--control-accent);
     }
     .tab-item:hover {
       color: var(--text);
@@ -905,6 +937,9 @@
       <div class="mini-strip" id="miniStrip">
         <span class="mini-label">SIZE</span>
         <span class="mini-value" id="miniSizeVal">16PX</span>
+        <div class="mini-sep" id="miniInkSep" style="display: none;"></div>
+        <span class="mini-label" id="miniInkLabel" style="display: none;">INK</span>
+        <button class="mini-btn-box" id="miniInkBtn" title="ペーパーモードの文字の濃さを切替 (40%〜100%)" style="display: none;">100%</button>
         <div class="mini-sep"></div>
         <button class="mini-btn-box" id="miniAlignL" title="LEFT">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="17" y1="10" x2="3" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="17" y1="18" x2="3" y2="18"></line></svg>
@@ -916,7 +951,7 @@
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="10" x2="7" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="21" y1="18" x2="7" y2="18"></line></svg>
         </button>
         <div class="mini-sep"></div>
-                <button class="mini-btn-box" id="miniToggleCaseBtn" title="UPPER / LOWER" style="text-transform: none;">A/a</button>
+        <button class="mini-btn-box" id="miniToggleCaseBtn" title="UPPER / LOWER" style="text-transform: none;">A/a</button>
         <button class="mini-btn-box" id="miniToggleZenHanBtn" title="ZEN / HAN">半/全</button>
         <button class="mini-btn-box" id="miniToggleHiraKataBtn" title="HIRA / KATA">あ/ア</button>
         <div class="mini-sep"></div>
@@ -962,9 +997,17 @@
         <input id="lineHeight" class="solid-slider" type="range" min="1" max="3" step="0.1" value="1.6">
       </div>
 
-      <div class="control span-3">
+      <div class="control span-2" id="paperInkControl" style="opacity: 0.45;">
         <div class="label-row">
-          <label for="fontFamily">04 FONT FAMILY</label>
+          <label for="paperInk">04 PAPER INK</label>
+          <span class="value" id="paperInkValue">OFF</span>
+        </div>
+        <input id="paperInk" class="solid-slider" type="range" min="1" max="5" step="1" value="5" title="PAPER MODE有効時に文字の濃淡（黒〜グレー）を調整できます">
+      </div>
+
+      <div class="control span-2">
+        <div class="label-row">
+          <label for="fontFamily">05 FONT FAMILY</label>
         </div>
         <div class="custom-select-container" id="fontFamilySelect">
           <div class="custom-select-trigger">
@@ -988,16 +1031,16 @@
         </select>
       </div>
 
-      <div class="control span-3">
+      <div class="control span-2">
         <div class="label-row">
-          <label>05 FOCUS</label>
+          <label>06 FOCUS</label>
         </div>
         <button class="action-btn" id="focusModeBtn" style="width:100%; height:24px; min-height:0; font-size:11px; padding:0; box-shadow:inset 0 -1px 0 rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center;">READING FOCUS</button>
       </div>
 
       <div class="control span-6">
         <div class="label-row">
-          <label>08 TRANSFORM ENGINE</label>
+          <label>07 TRANSFORM ENGINE</label>
         </div>
         <div class="transform-buttons" style="grid-template-columns: repeat(5, 1fr);">
           <button id="toggleCaseBtn" class="mini-btn" type="button" style="text-transform: none;" title="大文字/小文字切替">A/a</button>
@@ -1022,9 +1065,9 @@
 
       <div class="control span-3">
         <div class="label-row">
-          <label>09 LINE TOOLS</label>
+          <label>08 LINE TOOLS</label>
         </div>
-                <div class="transform-buttons" style="grid-template-columns: repeat(2, 1fr);">
+        <div class="transform-buttons" style="grid-template-columns: repeat(2, 1fr);">
           <button id="unifyBtn" class="mini-btn" title="全角スペースを半角へ">UNIFY</button>
           <button id="chatBtn" class="mini-btn" title="チャットログの整形">CHAT</button>
           <button id="undoBtn" class="mini-btn" title="元に戻す">UNDO</button>
@@ -1034,7 +1077,7 @@
 
       <div class="control span-3">
         <div class="label-row">
-          <label>05 THEME BANK</label>
+          <label>09 THEME BANK</label>
         </div>
         <div class="theme-buttons">
           <button class="theme-btn" data-theme="navy" aria-pressed="true">Navy</button>
@@ -1049,7 +1092,7 @@
       <div class="utility-row">
         <div class="compact-control">
           <div class="label-row">
-            <label>06 FIND / REPLACE</label>
+            <label>10 FIND / REPLACE</label>
           </div>
           <div class="search-row">
             <input id="findInput" class="tool-input" type="text" placeholder="FIND KEYWORD">
@@ -1065,7 +1108,7 @@
 
         <div class="compact-control">
           <div class="label-row">
-            <label>07 INFORMATION PANEL</label>
+            <label>11 INFORMATION PANEL</label>
             <div class="char-count" id="charCount">CHARS: 0</div>
           </div>
           <div class="status" id="status" style="border:none; background:none; padding:0; line-height: 1.4;">SYSTEM READY</div>
@@ -1157,6 +1200,14 @@
       }
     };
 
+    const PAPER_INK_LEVELS = {
+      "1": { label: "40%", name: "SOFT", color: "#949494" },
+      "2": { label: "55%", name: "MID", color: "#6e6e6e" },
+      "3": { label: "70%", name: "CHARCOAL", color: "#4a4a4a" },
+      "4": { label: "85%", name: "DEEP", color: "#282828" },
+      "5": { label: "100%", name: "BLACK", color: "#050505" }
+    };
+
     const root = document.documentElement;
     const editor = document.getElementById("editor");
     const status = document.getElementById("status");
@@ -1168,6 +1219,9 @@
     const fontWeightValue = document.getElementById("fontWeightValue");
     const lineHeightValue = document.getElementById("lineHeightValue");
     const paperModeBtn = document.getElementById("paperModeBtn");
+    const paperInkControl = document.getElementById("paperInkControl");
+    const paperInk = document.getElementById("paperInk");
+    const paperInkValue = document.getElementById("paperInkValue");
     const focusModeBtn = document.getElementById("focusModeBtn");
     const snapshotBtn = document.getElementById("snapshotBtn");
     const overwriteBtn = document.getElementById("overwriteBtn");
@@ -1178,6 +1232,9 @@
     const findNextBtn = document.getElementById("findNextBtn");
     const replaceOneBtn = document.getElementById("replaceOneBtn");
     const replaceAllBtn = document.getElementById("replaceAllBtn");
+    const miniInkSep = document.getElementById("miniInkSep");
+    const miniInkLabel = document.getElementById("miniInkLabel");
+    const miniInkBtn = document.getElementById("miniInkBtn");
 
     // Custom select dropdown logic
     const fontFamilySelect = document.getElementById("fontFamilySelect");
@@ -1264,6 +1321,13 @@
     let activeTabId = "";
     const activeHandles = new Map();
 
+    // Drag & Drop for tabs
+    let draggedTabId = null;
+    let dragOverTabId = null;
+    let dropPosition = null;
+
+    let paperInkLevel = "5";
+
     function generateTabId() {
       return "tab_" + Date.now().toString() + Math.floor(Math.random() * 1000).toString();
     }
@@ -1287,7 +1351,8 @@
       root.style.setProperty("--control-accent", t.controlAccent);
       root.style.setProperty("--border", t.border);
       root.style.setProperty("--border-strong", t.borderStrong);
-      document.querySelector('meta[name="theme-color"]').setAttribute("content", t.bg);
+      const metaTheme = document.querySelector('meta[name="theme-color"]');
+      if (metaTheme) metaTheme.setAttribute("content", t.bg);
       document.querySelectorAll(".theme-btn").forEach((btn) => {
         btn.setAttribute("aria-pressed", String(btn.dataset.theme === name));
       });
@@ -1304,26 +1369,51 @@
     function updateEditorColors() {
       const t = THEMES[activeTheme] || THEMES.navy;
       if (paperModeEnabled) {
+        const ink = PAPER_INK_LEVELS[paperInkLevel] || PAPER_INK_LEVELS["5"];
         root.style.setProperty("--editor-bg", "#f4f4f4");
-        root.style.setProperty("--editor-text", "#141414");
+        root.style.setProperty("--editor-text", ink.color);
         root.style.setProperty("--editor-border", "#cecece");
         root.style.setProperty("--editor-shadow-top", "rgba(255, 255, 255, 0.75)");
         root.style.setProperty("--editor-shadow-bottom", "rgba(0, 0, 0, 0.08)");
         root.style.setProperty("--slider-thumb-bg", "var(--control-accent)");
-      } else if (activeTheme === "red") {
-        root.style.setProperty("--editor-bg", t.panel);
-        root.style.setProperty("--editor-text", t.text);
-        root.style.setProperty("--editor-border", t.border);
-        root.style.setProperty("--editor-shadow-top", "rgba(255, 255, 255, 0.02)");
-        root.style.setProperty("--editor-shadow-bottom", "rgba(0, 0, 0, 0.45)");
-        root.style.setProperty("--slider-thumb-bg", "#ffffff");
+        
+        if (paperInkControl) paperInkControl.style.opacity = "1";
+        if (paperInkValue) paperInkValue.textContent = ink.label;
+        if (paperInk) {
+          paperInk.value = paperInkLevel;
+          paperInk.title = `PAPER INK: ${ink.label} (${ink.name})`;
+        }
+        if (miniInkBtn) {
+          miniInkBtn.textContent = ink.label;
+          miniInkBtn.style.display = "";
+        }
+        if (miniInkLabel) miniInkLabel.style.display = "";
+        if (miniInkSep) miniInkSep.style.display = "";
       } else {
-        root.style.setProperty("--editor-bg", "#171717");
-        root.style.setProperty("--editor-text", "#f0f0f0");
-        root.style.setProperty("--editor-border", "#363636");
-        root.style.setProperty("--editor-shadow-top", "rgba(255, 255, 255, 0.02)");
-        root.style.setProperty("--editor-shadow-bottom", "rgba(0, 0, 0, 0.45)");
-        root.style.setProperty("--slider-thumb-bg", "var(--control-accent)");
+        if (paperInkControl) paperInkControl.style.opacity = "0.45";
+        if (paperInkValue) paperInkValue.textContent = "OFF";
+        if (paperInk) {
+          paperInk.title = "PAPER MODE有効時に文字の濃淡（黒〜グレー）を調整できます";
+        }
+        if (miniInkBtn) miniInkBtn.style.display = "none";
+        if (miniInkLabel) miniInkLabel.style.display = "none";
+        if (miniInkSep) miniInkSep.style.display = "none";
+
+        if (activeTheme === "red") {
+          root.style.setProperty("--editor-bg", t.panel);
+          root.style.setProperty("--editor-text", t.text);
+          root.style.setProperty("--editor-border", t.border);
+          root.style.setProperty("--editor-shadow-top", "rgba(255, 255, 255, 0.02)");
+          root.style.setProperty("--editor-shadow-bottom", "rgba(0, 0, 0, 0.45)");
+          root.style.setProperty("--slider-thumb-bg", "#ffffff");
+        } else {
+          root.style.setProperty("--editor-bg", "#171717");
+          root.style.setProperty("--editor-text", "#f0f0f0");
+          root.style.setProperty("--editor-border", "#363636");
+          root.style.setProperty("--editor-shadow-top", "rgba(255, 255, 255, 0.02)");
+          root.style.setProperty("--editor-shadow-bottom", "rgba(0, 0, 0, 0.45)");
+          root.style.setProperty("--slider-thumb-bg", "var(--control-accent)");
+        }
       }
     }
 
@@ -1825,6 +1915,7 @@
         fontFamily: fontFamily.value,
         theme: themeName,
         paperMode: paperModeBtn.getAttribute("aria-pressed") === "true",
+        paperInkLevel: paperInkLevel,
         isVertical: isVertical,
         isMinimumMode: document.body.classList.contains("minimum-mode")
       }));
@@ -1851,6 +1942,7 @@
       fontFamily.value = loaded.fontFamily || "Meiryo, sans-serif";
       activeTheme = loaded.theme || "navy";
       paperModeEnabled = Boolean(loaded.paperMode);
+      paperInkLevel = loaded.paperInkLevel || "5";
       isVertical = Boolean(loaded.isVertical);
       if (loaded.isMinimumMode) {
         document.body.classList.add("minimum-mode");
@@ -1980,10 +2072,12 @@
 
     function renderTabs() {
       tabStrip.innerHTML = "";
-      tabs.forEach((tab, index) => {
+      tabs.forEach((tab) => {
         const item = document.createElement("div");
         item.className = "tab-item";
         item.setAttribute("aria-selected", tab.id === activeTabId ? "true" : "false");
+        item.setAttribute("draggable", "true");
+        item.setAttribute("title", `${tab.label} (ドラッグで並び替え可能)`);
         
         const label = document.createElement("span");
         label.textContent = tab.label;
@@ -2000,6 +2094,86 @@
           e.stopPropagation();
           closeTab(tab.id);
         });
+
+        // DnD events
+        item.addEventListener("dragstart", (e) => {
+          draggedTabId = tab.id;
+          item.classList.add("is-dragging");
+          e.dataTransfer.effectAllowed = "move";
+          e.dataTransfer.setData("text/plain", tab.id);
+        });
+
+        item.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          if (!draggedTabId || draggedTabId === tab.id) {
+            item.classList.remove("drop-before", "drop-after");
+            return;
+          }
+          const rect = item.getBoundingClientRect();
+          const midpoint = rect.left + rect.width / 2;
+          const position = e.clientX < midpoint ? "before" : "after";
+          dragOverTabId = tab.id;
+          dropPosition = position;
+          if (position === "before") {
+            item.classList.add("drop-before");
+            item.classList.remove("drop-after");
+          } else {
+            item.classList.add("drop-after");
+            item.classList.remove("drop-before");
+          }
+          e.dataTransfer.dropEffect = "move";
+        });
+
+        item.addEventListener("dragleave", (e) => {
+          if (item.contains(e.relatedTarget)) return;
+          item.classList.remove("drop-before", "drop-after");
+        });
+
+        item.addEventListener("drop", (e) => {
+          e.preventDefault();
+          item.classList.remove("drop-before", "drop-after");
+          if (!draggedTabId || draggedTabId === tab.id) {
+            draggedTabId = null;
+            dragOverTabId = null;
+            dropPosition = null;
+            return;
+          }
+
+          // Keep active editor text up to date
+          const activeTab = tabs.find(t => t.id === activeTabId);
+          if (activeTab) {
+            activeTab.text = editor.value;
+          }
+
+          const fromIndex = tabs.findIndex(t => t.id === draggedTabId);
+          const toIndex = tabs.findIndex(t => t.id === tab.id);
+
+          if (fromIndex !== -1 && toIndex !== -1) {
+            const [movedTab] = tabs.splice(fromIndex, 1);
+            let insertIndex = tabs.findIndex(t => t.id === tab.id);
+            if (dropPosition === "after") {
+              insertIndex += 1;
+            }
+            tabs.splice(insertIndex, 0, movedTab);
+            renderTabs();
+            saveState(activeTheme);
+            setStatus(`TAB REORDERED: ${movedTab.label}`);
+          }
+
+          draggedTabId = null;
+          dragOverTabId = null;
+          dropPosition = null;
+        });
+
+        item.addEventListener("dragend", () => {
+          document.querySelectorAll(".tab-item").forEach(el => {
+            el.classList.remove("is-dragging", "drop-before", "drop-after");
+          });
+          draggedTabId = null;
+          dragOverTabId = null;
+          dropPosition = null;
+        });
+
         tabStrip.appendChild(item);
       });
       
@@ -2103,6 +2277,22 @@
       applyPaperMode(paperModeEnabled);
       saveState(activeTheme);
       setStatus(paperModeEnabled ? "PAPER MODE: ON" : "PAPER MODE: OFF");
+    });
+
+    paperInk.addEventListener("input", () => {
+      paperInkLevel = paperInk.value;
+      updateEditorColors();
+      saveState(activeTheme);
+      const ink = PAPER_INK_LEVELS[paperInkLevel] || PAPER_INK_LEVELS["5"];
+      setStatus(`PAPER INK: ${ink.label} (${ink.name})`);
+    });
+
+    miniInkBtn.addEventListener("click", () => {
+      paperInkLevel = String((Number(paperInkLevel) % 5) + 1);
+      updateEditorColors();
+      saveState(activeTheme);
+      const ink = PAPER_INK_LEVELS[paperInkLevel] || PAPER_INK_LEVELS["5"];
+      setStatus(`PAPER INK: ${ink.label} (${ink.name})`);
     });
 
     [fontSize, fontWeight, lineHeight, fontFamily].forEach((el) => {
@@ -2439,6 +2629,19 @@
       miniSizeVal.textContent = `${fontSize.value}PX`;
       miniFind.value = findInput.value;
       miniReplace.value = replaceInput.value;
+      if (paperModeEnabled) {
+        const ink = PAPER_INK_LEVELS[paperInkLevel] || PAPER_INK_LEVELS["5"];
+        if (miniInkBtn) {
+          miniInkBtn.textContent = ink.label;
+          miniInkBtn.style.display = "";
+        }
+        if (miniInkLabel) miniInkLabel.style.display = "";
+        if (miniInkSep) miniInkSep.style.display = "";
+      } else {
+        if (miniInkBtn) miniInkBtn.style.display = "none";
+        if (miniInkLabel) miniInkLabel.style.display = "none";
+        if (miniInkSep) miniInkSep.style.display = "none";
+      }
       
       document.querySelectorAll(".mini-dot").forEach(dot => {
         dot.setAttribute("aria-pressed", String(dot.dataset.theme === activeTheme));
