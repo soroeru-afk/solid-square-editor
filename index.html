@@ -2366,7 +2366,7 @@ body.minimum-mode textarea {
               />
             </div>
 
-            <div class="saved-tabs-list" id="savedTabsList">
+            <div class="saved-tabs-list saved-tabs-full-list size-m" id="savedTabsList">
               <!-- 動的描画されます -->
             </div>
           </div>
@@ -3495,8 +3495,7 @@ function applySavedTabCardSize(size) {
   if (sizeToggleBtnM) sizeToggleBtnM.classList.toggle("active", size === "M");
   if (sizeToggleBtnL) sizeToggleBtnL.classList.toggle("active", size === "L");
   if (savedTabsList) {
-    savedTabsList.classList.remove("size-s", "size-m", "size-l");
-    savedTabsList.classList.add("size-" + size.toLowerCase());
+    savedTabsList.className = "saved-tabs-list saved-tabs-full-list size-" + size.toLowerCase();
   }
   saveState();
 }
@@ -3505,8 +3504,7 @@ function renderSavedTabs() {
   savedTabsList.innerHTML = "";
   updateSavedTabsBadge();
   if (savedTabsList) {
-    savedTabsList.classList.remove("size-s", "size-m", "size-l");
-    savedTabsList.classList.add("size-" + savedTabCardSize.toLowerCase());
+    savedTabsList.className = "saved-tabs-list saved-tabs-full-list size-" + savedTabCardSize.toLowerCase();
   }
 
   if (savedTabs.length === 0) {
