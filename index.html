@@ -3128,8 +3128,9 @@ function renderSavedTabs() {
       
       const input = document.createElement("input");
       input.type = "text";
-      input.className = "saved-tab-edit-input";
+      input.className = "saved-tab-title-input";
       input.value = editingSavedLabel;
+      input.placeholder = "タブの保存名を入力";
       input.addEventListener("input", (e) => { editingSavedLabel = e.target.value; });
       input.addEventListener("keydown", (e) => {
         if (e.key === "Enter") {
@@ -3142,13 +3143,34 @@ function renderSavedTabs() {
           renderSavedTabs();
         }
       });
-      input.addEventListener("blur", () => {
+
+      const saveBtn = document.createElement("button");
+      saveBtn.type = "button";
+      saveBtn.className = "mini-btn";
+      saveBtn.style.cssText = "height: 22px; padding: 0 6px; font-size: 9px;";
+      saveBtn.textContent = "SAVE";
+      saveBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
         saved.label = editingSavedLabel.trim() || saved.label;
         editingSavedTabId = null;
         saveSavedTabsState();
         renderSavedTabs();
       });
+
+      const cancelBtn = document.createElement("button");
+      cancelBtn.type = "button";
+      cancelBtn.className = "mini-btn";
+      cancelBtn.style.cssText = "height: 22px; padding: 0 4px; font-size: 9px;";
+      cancelBtn.textContent = "✕";
+      cancelBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        editingSavedTabId = null;
+        renderSavedTabs();
+      });
+
       titleGroup.appendChild(input);
+      titleGroup.appendChild(saveBtn);
+      titleGroup.appendChild(cancelBtn);
       header.appendChild(titleGroup);
       setTimeout(() => input.focus(), 0);
     } else {
