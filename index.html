@@ -2525,6 +2525,8 @@ function applyFocusMode(enabled) {
   focusModeBtn.textContent = enabled ? "EXIT FOCUS" : "FOCUS MODE";
   miniStrip.style.display = enabled ? "flex" : "none";
   headerStatus.style.display = enabled ? "block" : "none";
+  sidebarPanel.style.display = enabled ? "none" : "flex";
+  if (sidebarResizer) sidebarResizer.style.display = enabled ? "none" : "flex";
   setStatus(enabled ? "FOCUS MODE: ON" : "FOCUS MODE: OFF");
   saveState();
 }
@@ -2687,12 +2689,15 @@ function updateFullscreenIcon() {
   const isFull = !!(document.fullscreenElement || document.webkitFullscreenElement);
   toggleFullscreenBtn.classList.toggle("active", isFull);
   if (fullscreenIconContainer) {
+    fullscreenIconContainer.style.display = "flex";
+    fullscreenIconContainer.style.alignItems = "center";
+    fullscreenIconContainer.style.justifyContent = "center";
     if (isFull) {
       // Inner brackets (Exit fullscreen)
-      fullscreenIconContainer.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block;"><path d="M4 14h6v6m10-6h-6v6M4 10h6V4m10 6h-6V4" /></svg>';
+      fullscreenIconContainer.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: block;"><path d="M4 14h6v6m10-6h-6v6M4 10h6V4m10 6h-6V4" /></svg>';
     } else {
       // Outer brackets (Enter fullscreen)
-      fullscreenIconContainer.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block;"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" /></svg>';
+      fullscreenIconContainer.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: block;"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" /></svg>';
     }
   }
 }
