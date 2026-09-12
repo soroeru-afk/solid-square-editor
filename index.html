@@ -2506,7 +2506,96 @@ let sidebarActiveView = "controls"; // "controls" | "saved"
 let textAlignment = "left";
 let statusText = "SYSTEM READY (V2)";
 
-// Undo / Redo History
+function saveState() {
+  try {
+    const updatedTabs = tabs.map(t => t.id === activeTabId ? { ...t, text: editor.value } : t);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      tabs: updatedTabs,
+      activeTabId,
+      savedTabs,
+      savedTabCardSize,
+      fontSize,
+      fontWeight,
+      lineHeight,
+      fontFamily,
+      theme: activeTheme,
+      paperMode: paperModeEnabled,
+      paperInkLevel,
+      isVertical,
+      sidebarPosition,
+      sidebarWidth
+    }));
+  } catch (_) {}
+}
+
+function saveSavedTabsState() {
+  try {
+    localStorage.setItem(SAVED_TABS_STORAGE_KEY, JSON.stringify(savedTabs));
+    saveState();
+  } catch (_) {}
+}
+
+function updateSavedTabsBadge() {
+  const badge = document.getElementById("savedTabsCountBadge");
+  if (badge) badge.textContent = savedTabs.length;
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const loaded = JSON.parse(raw);
+      fontSize = loaded.fontSize || "16";
+      fontWeight = loaded.fontWeight || "400";
+      lineHeight = loaded.lineHeight || "1.6";
+      fontFamily = loaded.fontFamily || "Meiryo, sans-serif";
+      activeTheme = loaded.theme || "black";
+      paperModeEnabled = Boolean(loaded.paperMode);
+      paperInkLevel = loaded.paperInkLevel || "5";
+      isVertical = Boolean(loaded.isVertical);
+      if (loaded.sidebarPosition === "left" || loaded.sidebarPosition === "right") {
+        sidebarPosition = loaded.sidebarPosition;
+      }
+      if (typeof loaded.sidebarWidth === "number" && loaded.sidebarWidth >= 360) {
+        sidebarWidth = loaded.sidebarWidth;
+      }
+      
+      if (loaded.tabs && Array.isArray(loaded.tabs) && loaded.tabs.length > 0) {
+        tabs = loaded.tabs.map(t => ({
+          ...t,
+          originalText: typeof t.originalText !== "undefined" ? t.originalText : (t.text || "")
+        }));
+        activeTabId = loaded.activeTabId || tabs[0].id;
+      }
+      if (loaded.savedTabs && Array.isArray(loaded.savedTabs)) {
+        savedTabs = loaded.savedTabs;
+      }
+      if (loaded.savedTabCardSize && ["S", "M", "L"].includes(loaded.savedTabCardSize)) {
+        savedTabCardSize = loaded.savedTabCardSize;
+      }
+    }
+  } catch (_) {}
+
+  // Fallback if tabs are empty
+  if (!tabs || tabs.length === 0) {
+    const initId = generateTabId();
+    tabs = [{ id: initId, label: "TAB 01", text: "", filename: null, originalText: "" }];
+    activeTabId = initId;
+  }
+
+  const curTab = tabs.find(t => t.id === activeTabId) || tabs[0];
+  activeTabId = curTab.id;
+  editor.value = curTab.text || "";
+
+  applyTheme(activeTheme);
+  applyTypography();
+  applySidebarPosition(sidebarPosition);
+  applySidebarWidth(sidebarWidth);
+  renderTabs();
+  renderSavedTabs();
+  updateSavedTabsBadge();
+  updateStats();
+}
 let customHistory = {}; // tabId -> { past: [], future: [] }
 let isApplyingHistory = false;
 
@@ -3055,7 +3144,7 @@ function renderTabs() {
     tabEl.addEventListener("drop", (e) => handleTabDrop(e, tab.id));
     tabEl.addEventListener("dragend", handleTabDragEnd);
 
-    tabStrip.insertBefore(tabEl, addTabBtn);
+    tabStrip.appendChild(tabEl);
   });
 
   closeAllTabsBtn.style.display = tabs.length > 1 ? "inline-block" : "none";
