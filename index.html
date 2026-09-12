@@ -2162,6 +2162,20 @@ body.minimum-mode textarea {
     </aside>
   </main>
 
+  <!-- CONFIRM MODAL (Custom Cyber-Solid Modal matching App.tsx L1945-1958) -->
+  <div class="profile-modal-overlay" id="confirmModalOverlay" style="display: none;">
+    <div class="profile-modal" style="max-width: 450px;">
+      <h2 class="profile-modal-title">CONFIRMATION</h2>
+      <div class="profile-billing-section">
+        <p id="confirmModalMessage" style="white-space: pre-wrap; font-size: 13px; color: var(--text);"></p>
+      </div>
+      <div class="profile-action-row" style="display: flex; gap: 12px; margin-top: 24px;">
+        <button class="action-btn" id="confirmModalCancelBtn" style="flex: 1;">CANCEL</button>
+        <button class="action-btn" id="confirmModalOkBtn" style="flex: 1; background: var(--accent); color: #000; border-color: var(--accent);">OK</button>
+      </div>
+    </div>
+  </div>
+
   <input type="file" id="fileInputFallback" accept=".txt,.md,.json,.html,.css,.js,.ts,.tsx,.csv,.tsv" style="display: none;" />
 
   <script>
@@ -2412,6 +2426,41 @@ function setStatus(msg) {
   statusBox.textContent = msg;
   headerStatus.textContent = msg;
   headerStatus.title = msg;
+}
+
+function showConfirmDialog(message, onConfirm, onCancel) {
+  const overlay = document.getElementById("confirmModalOverlay");
+  const msgEl = document.getElementById("confirmModalMessage");
+  const okBtn = document.getElementById("confirmModalOkBtn");
+  const cancelBtn = document.getElementById("confirmModalCancelBtn");
+
+  if (!overlay || !msgEl || !okBtn || !cancelBtn) {
+    if (window.confirm(message)) {
+      if (onConfirm) onConfirm();
+    } else {
+      if (onCancel) onCancel();
+    }
+    return;
+  }
+
+  msgEl.textContent = message;
+  overlay.style.display = "flex";
+
+  const cleanup = () => {
+    overlay.style.display = "none";
+    okBtn.onclick = null;
+    cancelBtn.onclick = null;
+  };
+
+  okBtn.onclick = () => {
+    cleanup();
+    if (onConfirm) onConfirm();
+  };
+
+  cancelBtn.onclick = () => {
+    cleanup();
+    if (onCancel) onCancel();
+  };
 }
 
 function updateStats() {
@@ -2852,24 +2901,14 @@ function addTab(initialText, initialLabel, filename, handle) {
   saveState();
 }
 
-function closeTab(id) {
-  const tabToClose = tabs.find(t => t.id === id);
-  if (!tabToClose) return;
-
-  const isCurrent = id === activeTabId;
-  const currentText = isCurrent ? editor.value : tabToClose.text;
-  const isDirty = (currentText || "") !== (tabToClose.originalText || "");
-
-  if (isDirty) {
-    const ok = window.confirm('"' + tabToClose.label + '" は保存されていない変更があります。閉じてもよろしいですか？');
-    if (!ok) return;
-  }
-
+function executeCloseTab(id) {
   const index = tabs.findIndex(t => t.id === id);
+  if (index === -1) return;
+
   tabs = tabs.filter(t => t.id !== id);
   delete customHistory[id];
 
-  if (isCurrent) {
+  if (id === activeTabId) {
     if (tabs.length === 0) {
       activeTabId = null;
       editor.value = "";
@@ -2889,41 +2928,63 @@ function closeTab(id) {
   saveState();
 }
 
+function closeTab(id) {
+  const tabToClose = tabs.find(t => t.id === id);
+  if (!tabToClose) return;
+
+  const isCurrent = id === activeTabId;
+  const currentText = isCurrent ? editor.value : tabToClose.text;
+  const isDirty = (currentText || "") !== (tabToClose.originalText || "");
+
+  if (isDirty) {
+    const warning = "（保存していない変更内容は破棄されます）";
+    showConfirmDialog(
+      `「${tabToClose.label}」に変更があります。閉じますか？\n${warning}`,
+      () => executeCloseTab(id)
+    );
+    return;
+  }
+
+  executeCloseTab(id);
+}
+
 function closeAllTabs() {
+  if (tabs.length === 0) return;
+
   const dirtyTabs = tabs.filter(t => {
     const txt = (t.id === activeTabId) ? editor.value : t.text;
     return (txt || "") !== (t.originalText || "");
   });
 
-  if (dirtyTabs.length > 0) {
-    const ok = window.confirm("未保存の変更があるタブが " + dirtyTabs.length + " 個あります。すべてのタブを閉じて初期化しますか？");
-    if (!ok) return;
-  } else {
-    const ok = window.confirm("すべてのタブを閉じて初期化しますか？");
-    if (!ok) return;
-  }
-
-  tabs = [];
-  customHistory = {};
-  const initialId = generateTabId();
-  const initialTab = {
-    id: initialId,
-    label: "TAB 01",
-    text: "",
-    filename: null,
-    originalText: "",
-    handle: null
+  const executeCloseAll = () => {
+    tabs = [];
+    customHistory = {};
+    activeTabId = null;
+    editor.value = "";
+    editor.disabled = true;
+    editor.placeholder = "+ ボタンでタブを追加してください";
+    renderTabs();
+    updateStats();
+    if (isPreviewMode) renderPreview();
+    setStatus("ALL TABS CLOSED");
+    saveState();
   };
-  tabs.push(initialTab);
-  activeTabId = initialId;
-  editor.value = "";
-  editor.disabled = false;
 
-  renderTabs();
-  updateStats();
-  if (isPreviewMode) renderPreview();
-  setStatus("ALL TABS CLEARED");
-  saveState();
+  if (dirtyTabs.length > 0) {
+    let msg = "保存されていないタブがあります。すべて閉じてよろしいですか？\n\n【未保存のタブ】\n";
+    dirtyTabs.forEach(t => {
+      if (t.filename) {
+        msg += `・${t.label} (${t.filename})\n`;
+      } else {
+        msg += `・${t.label} (新規テキスト)\n`;
+      }
+    });
+    msg += "\n※これらを閉じると、変更内容はすべて失われます。";
+    
+    showConfirmDialog(msg, executeCloseAll);
+  } else {
+    showConfirmDialog("すべてのタブを閉じますか？", executeCloseAll);
+  }
 }
 
 /* ==========================================================================
@@ -3031,26 +3092,32 @@ function openSavedTab(saved) {
 function removeSavedTab(savedId) {
   const item = savedTabs.find(s => s.id === savedId);
   if (!item) return;
-  const ok = window.confirm('保存タブ "' + item.label + '" を削除してもよろしいですか？');
-  if (!ok) return;
 
-  savedTabs = savedTabs.filter(s => s.id !== savedId);
-  saveSavedTabsState();
-  renderSavedTabs();
-  updateSavedTabsBadge();
-  setStatus('SAVED TAB DELETED: "' + item.label + '"');
+  showConfirmDialog(
+    `保存タブ「${item.label}」を削除しますか？\n（この操作は取り消せません）`,
+    () => {
+      savedTabs = savedTabs.filter(s => s.id !== savedId);
+      saveSavedTabsState();
+      renderSavedTabs();
+      updateSavedTabsBadge();
+      setStatus('REMOVED: ' + item.label);
+    }
+  );
 }
 
 function clearAllSavedTabs() {
   if (savedTabs.length === 0) return;
-  const ok = window.confirm("保存されているすべてのタブ (" + savedTabs.length + " 件) を完全に消去しますか？");
-  if (!ok) return;
 
-  savedTabs = [];
-  saveSavedTabsState();
-  renderSavedTabs();
-  updateSavedTabsBadge();
-  setStatus("ALL SAVED TABS CLEARED");
+  showConfirmDialog(
+    `保存タブエリアの全 ${savedTabs.length} 件をすべてクリアしますか？\n（この操作は取り消せません）`,
+    () => {
+      savedTabs = [];
+      saveSavedTabsState();
+      renderSavedTabs();
+      updateSavedTabsBadge();
+      setStatus("ALL SAVED TABS CLEARED");
+    }
+  );
 }
 
 function exportAllSavedTabs() {
