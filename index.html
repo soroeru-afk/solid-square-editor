@@ -4165,28 +4165,60 @@ editor.addEventListener("keydown", (e) => {
   }
 });
 
+function runStripHtml(text) {
+  const div = document.createElement("div");
+  div.style.position = "fixed";
+  div.style.left = "-9999px";
+  div.style.whiteSpace = "pre-wrap";
+  div.style.width = "1000px";
+  document.body.appendChild(div);
+
+  div.innerHTML = text.replace(/<iframe/gi, "&lt;iframe");
+
+  div.querySelectorAll("p, div, li, tr, h1, h2, h3, h4").forEach((el) => {
+    el.style.display = "block";
+  });
+  div.querySelectorAll("br").forEach(br => br.after("\n"));
+  const clean = div.innerText.replace(/\n{3,}/g, "\n\n").trim();
+  document.body.removeChild(div);
+  return clean;
+}
+
+function runCleanPastedHtml(html) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+  const toRemove = doc.querySelectorAll("script, style, meta, link, title, head");
+  toRemove.forEach(el => el.remove());
+  
+  doc.body.querySelectorAll("*").forEach(el => {
+    const attrNames = Array.from(el.attributes).map(a => a.name);
+    attrNames.forEach(name => el.removeAttribute(name));
+  });
+  return doc.body.innerHTML;
+}
+
 editor.addEventListener("paste", (e) => {
-  if (!isHtmlMode) return;
   const html = e.clipboardData?.getData("text/html");
   if (html) {
     e.preventDefault();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, "text/html");
+    let content = "";
+    if (isHtmlMode) {
+      content = runCleanPastedHtml(html);
+      setStatus("PASTED AS HTML SOURCE");
+    } else {
+      content = runStripHtml(html);
+      setStatus("PASTED AS CLEAN TEXT");
+    }
     
-    doc.querySelectorAll("script, style, noscript").forEach(el => el.remove());
-    doc.querySelectorAll("*").forEach(el => {
-      Array.from(el.attributes).forEach(a => {
-        if (a.name !== "href" && a.name !== "src") el.removeAttribute(a.name);
-      });
-    });
+    const start = editor.selectionStart || 0;
+    const end = editor.selectionEnd || 0;
     
-    const cleanHtml = doc.body.innerHTML;
-    const start = editor.selectionStart;
-    const end = editor.selectionEnd;
-    editor.setRangeText(cleanHtml, start, end, "end");
+    editor.focus();
+    editor.setSelectionRange(start, end);
+    document.execCommand('insertText', false, content);
     recordHistory();
     updateStats();
-    setStatus("CLEAN HTML PASTED");
+    saveState();
   }
 });
 
