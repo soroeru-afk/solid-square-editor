@@ -2995,12 +2995,16 @@ function handleTabDragEnd() {
    ========================================================================== */
 function saveActiveTabToBank() {
   const cur = tabs.find(t => t.id === activeTabId);
-  if (!cur) return;
   const text = editor.value;
+  const baseLabel = cur ? cur.label : "TAB";
+
+  const firstLine = text.trim().split(/[\r\n]+/)[0] || "";
+  const snippet = firstLine.replace(/[#*`\-_=~[\]]/g, "").trim().slice(0, 24);
+  const autoLabel = snippet ? `${baseLabel} - ${snippet}` : baseLabel;
 
   const newSaved = {
     id: "saved_" + Date.now().toString() + Math.floor(Math.random() * 1000).toString(),
-    label: cur.label || "SAVED TAB",
+    label: autoLabel,
     text: text,
     savedAt: Date.now()
   };
@@ -3008,7 +3012,8 @@ function saveActiveTabToBank() {
   savedTabs.unshift(newSaved);
   saveSavedTabsState();
   updateSavedTabsBadge();
-  setStatus('TAB SAVED TO BANK: "' + newSaved.label + '"');
+  switchSidebarView("saved");
+  setStatus('TAB SAVED: "' + autoLabel + '"');
 }
 
 function openSavedTab(saved) {
