@@ -2487,6 +2487,13 @@ function applyTheme(name) {
     paperInkContainer.style.opacity = paperModeEnabled ? "1" : "0.45";
   }
 
+  if (miniInkSep) miniInkSep.style.display = paperModeEnabled ? "block" : "none";
+  if (miniInkLabel) miniInkLabel.style.display = paperModeEnabled ? "inline" : "none";
+  if (miniInkBtn) {
+    miniInkBtn.style.display = paperModeEnabled ? "inline-flex" : "none";
+    miniInkBtn.textContent = info.label;
+  }
+
   saveState();
 }
 
