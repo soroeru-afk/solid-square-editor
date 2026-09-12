@@ -2959,28 +2959,34 @@ function applyAlignment(align) {
 }
 
 function applyTypography() {
-  editor.style.fontSize = fontSize + "px";
-  editor.style.fontWeight = fontWeight;
-  editor.style.lineHeight = lineHeight;
-  editor.style.fontFamily = fontFamily;
+  if (editor) {
+    editor.style.fontSize = fontSize + "px";
+    editor.style.fontWeight = fontWeight;
+    editor.style.lineHeight = lineHeight;
+    editor.style.fontFamily = fontFamily;
+  }
 
-  previewContent.style.fontSize = fontSize + "px";
-  previewContent.style.fontWeight = fontWeight;
-  previewContent.style.lineHeight = lineHeight;
-  previewContent.style.fontFamily = fontFamily;
+  if (previewContent) {
+    previewContent.style.fontSize = fontSize + "px";
+    previewContent.style.fontWeight = fontWeight;
+    previewContent.style.lineHeight = lineHeight;
+    previewContent.style.fontFamily = fontFamily;
+  }
 
-  fontSizeValue.textContent = fontSize + "px";
-  miniSizeValue.textContent = fontSize + "PX";
-  fontWeightValue.textContent = fontWeight;
-  lineHeightValue.textContent = Number(lineHeight).toFixed(1);
+  if (fontSizeValue) fontSizeValue.textContent = fontSize + "px";
+  if (miniSizeValue) miniSizeValue.textContent = fontSize + "PX";
+  if (fontWeightValue) fontWeightValue.textContent = fontWeight;
+  if (lineHeightValue) lineHeightValue.textContent = Number(lineHeight).toFixed(1);
 
-  fontSizeInput.value = fontSize;
-  fontWeightInput.value = fontWeight;
-  lineHeightInput.value = lineHeight;
-  fontFamilyInput.value = fontFamily;
+  if (fontSizeInput) fontSizeInput.value = fontSize;
+  if (fontWeightInput) fontWeightInput.value = fontWeight;
+  if (lineHeightInput) lineHeightInput.value = lineHeight;
+  if (fontFamilyInput) fontFamilyInput.value = fontFamily;
   
-  const selectedOption = fontFamilySelect.querySelector(`.custom-select-option[data-value="${fontFamily}"]`);
-  fontFamilyDisplay.textContent = selectedOption ? selectedOption.textContent : "MEIRYO";
+  if (fontFamilySelect) {
+    const selectedOption = fontFamilySelect.querySelector(`.custom-select-option[data-value="${fontFamily}"]`);
+    if (fontFamilyDisplay) fontFamilyDisplay.textContent = selectedOption ? selectedOption.textContent : "MEIRYO";
+  }
 
   saveState();
 }
