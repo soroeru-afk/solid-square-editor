@@ -1653,11 +1653,20 @@ body.minimum-mode textarea {
 }
 
 /* --- Saved Tab Bank Full Area (保存タブ専用ビュー) --- */
+.sidebar-scroll.is-saved-view {
+  overflow: hidden !important;
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+}
+
 .saved-tabs-view-container {
   display: flex;
   flex-direction: column;
   height: 100%;
-  gap: 10px;
+  flex: 1;
+  min-height: 0;
+  gap: 8px;
 }
 
 .saved-tabs-topbar {
@@ -1722,7 +1731,7 @@ body.minimum-mode textarea {
   align-items: center;
   gap: 6px;
   flex-shrink: 0;
-  padding-bottom: 2px;
+  padding-bottom: 4px;
 }
 
 .saved-tabs-full-list {
@@ -1730,9 +1739,28 @@ body.minimum-mode textarea {
   flex-direction: column;
   gap: 6px;
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 4px;
   scrollbar-width: thin;
-  padding-right: 2px;
+  scrollbar-color: var(--border-strong) var(--surface);
+}
+
+.saved-tabs-full-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.saved-tabs-full-list::-webkit-scrollbar-track {
+  background: var(--surface);
+}
+
+.saved-tabs-full-list::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+}
+
+.saved-tabs-full-list::-webkit-scrollbar-thumb:hover {
+  background: var(--control-accent);
 }
 
 .saved-tab-card {
@@ -1747,6 +1775,52 @@ body.minimum-mode textarea {
 
 .saved-tab-card:hover {
   border-color: var(--border-strong);
+}
+
+.saved-tab-card.is-opened {
+  border-color: var(--border-strong);
+  background: var(--surface-2);
+}
+
+.saved-tab-card.is-active-tab {
+  border-color: var(--control-accent);
+  box-shadow: inset 0 0 0 1px var(--control-accent);
+}
+
+.saved-tab-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 5px;
+  font-family: var(--title-font);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  border-radius: 2px;
+}
+
+.saved-tab-status-badge.opened {
+  background: var(--surface);
+  color: var(--control-accent);
+  border: 1px solid var(--control-accent);
+}
+
+.saved-tab-status-badge.editing {
+  background: var(--control-accent);
+  color: #000000;
+  border: 1px solid var(--control-accent);
+}
+
+.saved-tab-btn.active-tab-btn {
+  background: var(--control-accent);
+  color: #000000;
+  font-weight: 700;
+  border-color: var(--control-accent);
+}
+
+.saved-tab-btn.active-tab-btn:hover {
+  filter: brightness(1.1);
 }
 
 .saved-tab-header-row {
@@ -2041,7 +2115,7 @@ body.minimum-mode textarea {
           </div>
           <div class="tab-actions-pinned">
             <button class="tab-action-btn tab-add-btn" id="addTabBtn" title="NEW TAB">+</button>
-            <button class="tab-action-btn" id="saveTabToBankBtn" title="現在のタブを保存タブエリアに保持（使い回し用に保存）">★ SAVE</button>
+            <button class="tab-action-btn" id="saveTabToBankBtn" title="現在のタブを保存タブエリアに保持（使い回し用に保存）">★ SAVE TAB</button>
             <button class="tab-action-btn" id="closeAllTabsBtn" title="CLOSE ALL TABS" style="display: none; color: var(--muted);">CLEAR ALL</button>
           </div>
         </div>
@@ -2366,7 +2440,7 @@ body.minimum-mode textarea {
               />
             </div>
 
-            <div class="saved-tabs-list saved-tabs-full-list size-m" id="savedTabsList">
+            <div class="saved-tabs-list" id="savedTabsList">
               <!-- 動的描画されます -->
             </div>
           </div>
@@ -2506,96 +2580,7 @@ let sidebarActiveView = "controls"; // "controls" | "saved"
 let textAlignment = "left";
 let statusText = "SYSTEM READY (V2)";
 
-function saveState() {
-  try {
-    const updatedTabs = tabs.map(t => t.id === activeTabId ? { ...t, text: editor.value } : t);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      tabs: updatedTabs,
-      activeTabId,
-      savedTabs,
-      savedTabCardSize,
-      fontSize,
-      fontWeight,
-      lineHeight,
-      fontFamily,
-      theme: activeTheme,
-      paperMode: paperModeEnabled,
-      paperInkLevel,
-      isVertical,
-      sidebarPosition,
-      sidebarWidth
-    }));
-  } catch (_) {}
-}
-
-function saveSavedTabsState() {
-  try {
-    localStorage.setItem(SAVED_TABS_STORAGE_KEY, JSON.stringify(savedTabs));
-    saveState();
-  } catch (_) {}
-}
-
-function updateSavedTabsBadge() {
-  const badge = document.getElementById("savedTabsCountBadge");
-  if (badge) badge.textContent = savedTabs.length;
-}
-
-function loadState() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const loaded = JSON.parse(raw);
-      fontSize = loaded.fontSize || "16";
-      fontWeight = loaded.fontWeight || "400";
-      lineHeight = loaded.lineHeight || "1.6";
-      fontFamily = loaded.fontFamily || "Meiryo, sans-serif";
-      activeTheme = loaded.theme || "black";
-      paperModeEnabled = Boolean(loaded.paperMode);
-      paperInkLevel = loaded.paperInkLevel || "5";
-      isVertical = Boolean(loaded.isVertical);
-      if (loaded.sidebarPosition === "left" || loaded.sidebarPosition === "right") {
-        sidebarPosition = loaded.sidebarPosition;
-      }
-      if (typeof loaded.sidebarWidth === "number" && loaded.sidebarWidth >= 360) {
-        sidebarWidth = loaded.sidebarWidth;
-      }
-      
-      if (loaded.tabs && Array.isArray(loaded.tabs) && loaded.tabs.length > 0) {
-        tabs = loaded.tabs.map(t => ({
-          ...t,
-          originalText: typeof t.originalText !== "undefined" ? t.originalText : (t.text || "")
-        }));
-        activeTabId = loaded.activeTabId || tabs[0].id;
-      }
-      if (loaded.savedTabs && Array.isArray(loaded.savedTabs)) {
-        savedTabs = loaded.savedTabs;
-      }
-      if (loaded.savedTabCardSize && ["S", "M", "L"].includes(loaded.savedTabCardSize)) {
-        savedTabCardSize = loaded.savedTabCardSize;
-      }
-    }
-  } catch (_) {}
-
-  // Fallback if tabs are empty
-  if (!tabs || tabs.length === 0) {
-    const initId = generateTabId();
-    tabs = [{ id: initId, label: "TAB 01", text: "", filename: null, originalText: "" }];
-    activeTabId = initId;
-  }
-
-  const curTab = tabs.find(t => t.id === activeTabId) || tabs[0];
-  activeTabId = curTab.id;
-  editor.value = curTab.text || "";
-
-  applyTheme(activeTheme);
-  applyTypography();
-  applySidebarPosition(sidebarPosition);
-  applySidebarWidth(sidebarWidth);
-  renderTabs();
-  renderSavedTabs();
-  updateSavedTabsBadge();
-  updateStats();
-}
+// Undo / Redo History
 let customHistory = {}; // tabId -> { past: [], future: [] }
 let isApplyingHistory = false;
 
@@ -2959,34 +2944,28 @@ function applyAlignment(align) {
 }
 
 function applyTypography() {
-  if (editor) {
-    editor.style.fontSize = fontSize + "px";
-    editor.style.fontWeight = fontWeight;
-    editor.style.lineHeight = lineHeight;
-    editor.style.fontFamily = fontFamily;
-  }
+  editor.style.fontSize = fontSize + "px";
+  editor.style.fontWeight = fontWeight;
+  editor.style.lineHeight = lineHeight;
+  editor.style.fontFamily = fontFamily;
 
-  if (previewContent) {
-    previewContent.style.fontSize = fontSize + "px";
-    previewContent.style.fontWeight = fontWeight;
-    previewContent.style.lineHeight = lineHeight;
-    previewContent.style.fontFamily = fontFamily;
-  }
+  previewContent.style.fontSize = fontSize + "px";
+  previewContent.style.fontWeight = fontWeight;
+  previewContent.style.lineHeight = lineHeight;
+  previewContent.style.fontFamily = fontFamily;
 
-  if (fontSizeValue) fontSizeValue.textContent = fontSize + "px";
-  if (miniSizeValue) miniSizeValue.textContent = fontSize + "PX";
-  if (fontWeightValue) fontWeightValue.textContent = fontWeight;
-  if (lineHeightValue) lineHeightValue.textContent = Number(lineHeight).toFixed(1);
+  fontSizeValue.textContent = fontSize + "px";
+  miniSizeValue.textContent = fontSize + "PX";
+  fontWeightValue.textContent = fontWeight;
+  lineHeightValue.textContent = Number(lineHeight).toFixed(1);
 
-  if (fontSizeInput) fontSizeInput.value = fontSize;
-  if (fontWeightInput) fontWeightInput.value = fontWeight;
-  if (lineHeightInput) lineHeightInput.value = lineHeight;
-  if (fontFamilyInput) fontFamilyInput.value = fontFamily;
+  fontSizeInput.value = fontSize;
+  fontWeightInput.value = fontWeight;
+  lineHeightInput.value = lineHeight;
+  fontFamilyInput.value = fontFamily;
   
-  if (fontFamilySelect) {
-    const selectedOption = fontFamilySelect.querySelector(`.custom-select-option[data-value="${fontFamily}"]`);
-    if (fontFamilyDisplay) fontFamilyDisplay.textContent = selectedOption ? selectedOption.textContent : "MEIRYO";
-  }
+  const selectedOption = fontFamilySelect.querySelector(`.custom-select-option[data-value="${fontFamily}"]`);
+  fontFamilyDisplay.textContent = selectedOption ? selectedOption.textContent : "MEIRYO";
 
   saveState();
 }
@@ -3150,7 +3129,7 @@ function renderTabs() {
     tabEl.addEventListener("drop", (e) => handleTabDrop(e, tab.id));
     tabEl.addEventListener("dragend", handleTabDragEnd);
 
-    tabStrip.appendChild(tabEl);
+    tabStrip.insertBefore(tabEl, addTabBtn);
   });
 
   closeAllTabsBtn.style.display = tabs.length > 1 ? "inline-block" : "none";
@@ -3495,7 +3474,8 @@ function applySavedTabCardSize(size) {
   if (sizeToggleBtnM) sizeToggleBtnM.classList.toggle("active", size === "M");
   if (sizeToggleBtnL) sizeToggleBtnL.classList.toggle("active", size === "L");
   if (savedTabsList) {
-    savedTabsList.className = "saved-tabs-list saved-tabs-full-list size-" + size.toLowerCase();
+    savedTabsList.classList.remove("size-s", "size-m", "size-l");
+    savedTabsList.classList.add("size-" + size.toLowerCase());
   }
   saveState();
 }
@@ -3504,7 +3484,8 @@ function renderSavedTabs() {
   savedTabsList.innerHTML = "";
   updateSavedTabsBadge();
   if (savedTabsList) {
-    savedTabsList.className = "saved-tabs-list saved-tabs-full-list size-" + savedTabCardSize.toLowerCase();
+    savedTabsList.classList.remove("size-s", "size-m", "size-l");
+    savedTabsList.classList.add("size-" + savedTabCardSize.toLowerCase());
   }
 
   if (savedTabs.length === 0) {
@@ -4165,60 +4146,28 @@ editor.addEventListener("keydown", (e) => {
   }
 });
 
-function runStripHtml(text) {
-  const div = document.createElement("div");
-  div.style.position = "fixed";
-  div.style.left = "-9999px";
-  div.style.whiteSpace = "pre-wrap";
-  div.style.width = "1000px";
-  document.body.appendChild(div);
-
-  div.innerHTML = text.replace(/<iframe/gi, "&lt;iframe");
-
-  div.querySelectorAll("p, div, li, tr, h1, h2, h3, h4").forEach((el) => {
-    el.style.display = "block";
-  });
-  div.querySelectorAll("br").forEach(br => br.after("\n"));
-  const clean = div.innerText.replace(/\n{3,}/g, "\n\n").trim();
-  document.body.removeChild(div);
-  return clean;
-}
-
-function runCleanPastedHtml(html) {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
-  const toRemove = doc.querySelectorAll("script, style, meta, link, title, head");
-  toRemove.forEach(el => el.remove());
-  
-  doc.body.querySelectorAll("*").forEach(el => {
-    const attrNames = Array.from(el.attributes).map(a => a.name);
-    attrNames.forEach(name => el.removeAttribute(name));
-  });
-  return doc.body.innerHTML;
-}
-
 editor.addEventListener("paste", (e) => {
+  if (!isHtmlMode) return;
   const html = e.clipboardData?.getData("text/html");
   if (html) {
     e.preventDefault();
-    let content = "";
-    if (isHtmlMode) {
-      content = runCleanPastedHtml(html);
-      setStatus("PASTED AS HTML SOURCE");
-    } else {
-      content = runStripHtml(html);
-      setStatus("PASTED AS CLEAN TEXT");
-    }
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, "text/html");
     
-    const start = editor.selectionStart || 0;
-    const end = editor.selectionEnd || 0;
+    doc.querySelectorAll("script, style, noscript").forEach(el => el.remove());
+    doc.querySelectorAll("*").forEach(el => {
+      Array.from(el.attributes).forEach(a => {
+        if (a.name !== "href" && a.name !== "src") el.removeAttribute(a.name);
+      });
+    });
     
-    editor.focus();
-    editor.setSelectionRange(start, end);
-    document.execCommand('insertText', false, content);
+    const cleanHtml = doc.body.innerHTML;
+    const start = editor.selectionStart;
+    const end = editor.selectionEnd;
+    editor.setRangeText(cleanHtml, start, end, "end");
     recordHistory();
     updateStats();
-    saveState();
+    setStatus("CLEAN HTML PASTED");
   }
 });
 
