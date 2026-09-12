@@ -1875,283 +1875,286 @@ body.minimum-mode textarea {
         <span class="sidebar-title">CONTROL PANEL</span>
         <div style="display: flex; gap: 6px; align-items: center;">
           <button
-            class="mini-btn"
+            class="mini-btn-box"
             id="toggleSidebarPosBtn"
             type="button"
             title="パネルの位置を左右反対に移動"
-            style="height: 22px; padding: 0 6px;"
+            style="padding: 0 6px;"
           >
-            LEFT ⇄
+            <span id="posBtnText">LEFT ⇄</span>
           </button>
           <button
-            class="mini-btn"
+            class="mini-btn-box"
             id="toggleFullscreenBtn"
             type="button"
-            title="全画面表示切替"
-            style="height: 22px; padding: 0 6px;"
+            title="ブラウザ全画面表示を切替"
+            style="padding: 0 6px;"
           >
-            <span id="fullscreenIcon">[  ]</span>
+            <span id="fullscreenIconContainer">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block;">
+                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+              </svg>
+            </span>
           </button>
         </div>
       </div>
 
-      <div class="sidebar-content">
-        <div class="sidebar-scroll">
-          <!-- 01 STATUS (Exact App.tsx Structure) -->
+      <!-- スクロールコンテナ (.sidebar-scroll) -->
+      <div class="sidebar-scroll">
+        <!-- 01 STATUS (Exact App.tsx Structure) -->
+        <div class="compact-control">
+          <div class="label-row">
+            <label>01 STATUS</label>
+            <div class="char-count" id="sidebarCharCount">CHARS: 0</div>
+          </div>
+          <div
+            class="status sidebar-status-box"
+            id="statusBox"
+            title="SYSTEM READY (V2)"
+          >
+            SYSTEM READY (V2)
+          </div>
+        </div>
+
+        <!-- ─── SIDEBAR VIEW TABS SWITCHER ─── -->
+        <div class="sidebar-view-tabs">
+          <button 
+            type="button"
+            class="sidebar-view-tab-btn active"
+            id="viewBtnControls"
+            title="基本操作パネル（テーマ、フォント、行間、整形ツール等）"
+          >
+            CONTROLS
+          </button>
+          <button 
+            type="button"
+            class="sidebar-view-tab-btn"
+            id="viewBtnSaved"
+            title="保存タブ・使い回しタブ一覧"
+          >
+            SAVED TABS
+            <span class="sidebar-view-tab-badge" id="savedTabsCountBadge">0</span>
+          </button>
+        </div>
+
+        <!-- VIEW A: CONTROLS (基本操作パネル) -->
+        <div class="sidebar-view-content active" id="viewControls">
+          <!-- 02 THEME BANK -->
+          <div class="control">
+            <div class="label-row">
+              <label>02 THEME BANK</label>
+            </div>
+            <div class="theme-buttons">
+              <button class="theme-btn" data-theme="navy" aria-pressed="false">Navy</button>
+              <button class="theme-btn" data-theme="light" aria-pressed="false">Light</button>
+              <button class="theme-btn" data-theme="black" aria-pressed="true">Black</button>
+              <button class="theme-btn" data-theme="gray" aria-pressed="false">Gray</button>
+              <button class="theme-btn" data-theme="red" aria-pressed="false">Red</button>
+              <button class="paper-btn" id="paperModeBtn" aria-pressed="false">Paper</button>
+            </div>
+          </div>
+
+          <!-- 03 SIZE & 04 WEIGHT -->
+          <div class="sidebar-grid-2">
+            <div class="control">
+              <div class="label-row">
+                <label>03 SIZE</label>
+                <span class="value" id="fontSizeValue">16px</span>
+              </div>
+              <input class="solid-slider" id="fontSize" type="range" min="8" max="100" step="1" value="16" />
+            </div>
+
+            <div class="control">
+              <div class="label-row">
+                <label>04 WEIGHT</label>
+                <span class="value" id="fontWeightValue">400</span>
+              </div>
+              <input class="solid-slider" id="fontWeight" type="range" min="100" max="900" step="100" value="400" />
+            </div>
+          </div>
+
+          <!-- 05 LEADING & 06 PAPER INK -->
+          <div class="sidebar-grid-2">
+            <div class="control">
+              <div class="label-row">
+                <label>05 LEADING</label>
+                <span class="value" id="lineHeightValue">1.6</span>
+              </div>
+              <input class="solid-slider" id="lineHeight" type="range" min="1" max="3" step="0.1" value="1.6" />
+            </div>
+
+            <div class="control" id="paperInkContainer" style="opacity: 0.45;">
+              <div class="label-row">
+                <label>06 PAPER INK</label>
+                <span class="value" id="paperInkValue">OFF</span>
+              </div>
+              <input 
+                class="solid-slider" 
+                id="paperInk"
+                type="range" 
+                min="1" 
+                max="5" 
+                step="1" 
+                value="5" 
+                title="PAPER MODE有効時に文字の濃淡を調整できます"
+              />
+            </div>
+          </div>
+
+          <!-- 07 FONT FAMILY -->
+          <div class="control">
+            <div class="label-row">
+              <label>07 FONT FAMILY</label>
+            </div>
+            <div class="custom-select-container" id="fontFamilySelect" style="position: relative; width: 100%; height: 24px;">
+              <div class="custom-select-trigger" style="border: 1px solid var(--border); background: var(--surface); color: var(--text); padding: 0 8px; font-family: var(--title-font); font-size: 11px; height: 100%; display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+                <span class="custom-select-value" id="fontFamilyDisplay">MEIRYO</span>
+                <span style="font-size: 9px; opacity: 0.6;">▼</span>
+              </div>
+              <div class="custom-select-dropdown" id="fontFamilyDropdown" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--surface); border: 1px solid var(--border-strong); z-index: 1000; max-height: 180px; overflow-y: auto;">
+                <div class="custom-select-option selected" data-value="Meiryo, sans-serif">MEIRYO</div>
+                <div class="custom-select-option" data-value="'MS Gothic', monospace">MS GOTHIC</div>
+                <div class="custom-select-option" data-value="system-ui, sans-serif">SYSTEM UI</div>
+                <div class="custom-select-option" data-value="'Yu Gothic UI', sans-serif">YU GOTHIC UI</div>
+                <div class="custom-select-option" data-value="'Consolas', monospace">CONSOLAS</div>
+              </div>
+            </div>
+            <select id="fontFamily" style="display: none;">
+              <option value="Meiryo, sans-serif">MEIRYO</option>
+              <option value="'MS Gothic', monospace">MS GOTHIC</option>
+              <option value="system-ui, sans-serif">SYSTEM UI</option>
+              <option value="'Yu Gothic UI', sans-serif">YU GOTHIC UI</option>
+              <option value="'Consolas', monospace">CONSOLAS</option>
+            </select>
+          </div>
+
+          <!-- 08 TRANSFORM ENGINE -->
+          <div class="control">
+            <div class="label-row">
+              <label>08 TRANSFORM ENGINE</label>
+            </div>
+            <div class="transform-buttons" style="grid-template-columns: repeat(5, 1fr);">
+              <button class="mini-btn" id="toggleCaseBtn" type="button" style="text-transform: none;" title="大文字/小文字切替">A/a</button>
+              <button class="mini-btn" id="toggleZenHanBtn" type="button" title="全角/半角切替">半/全</button>
+              <button class="mini-btn" id="toggleHiraKataBtn" type="button" title="ひらがな/カタカナ切替">あ/ア</button>
+              <button class="mini-btn" id="cleanBtn" type="button" title="空行集約とトリミング">CLN</button>
+              <button class="mini-btn" id="toggleVerticalBtn" type="button" title="縦組/横組切替">横/縦</button>
+              
+              <button class="mini-btn" id="alignLeftBtn" type="button" title="左寄せ">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="17" y1="10" x2="3" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="17" y1="18" x2="3" y2="18"></line></svg>
+              </button>
+              <button class="mini-btn" id="alignCenterBtn" type="button" title="中央寄せ">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="10" x2="6" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="18" y1="18" x2="6" y2="18"></line></svg>
+              </button>
+              <button class="mini-btn" id="alignRightBtn" type="button" title="右寄せ">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="10" x2="7" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="21" y1="18" x2="7" y2="18"></line></svg>
+              </button>
+              <button class="mini-btn" id="toggleHtmlModeBtn" type="button" title="HTMLペーストモード切替">HTML</button>
+              <button class="mini-btn" id="togglePreviewBtn" type="button" title="Markdownプレビュー切替">MD</button>
+            </div>
+          </div>
+
+          <!-- 09 LINE TOOLS -->
+          <div class="control">
+            <div class="label-row">
+              <label>09 LINE TOOLS</label>
+            </div>
+            <div class="transform-buttons" style="grid-template-columns: repeat(4, 1fr);">
+              <button class="mini-btn" id="unifyBtn" title="全角スペースを半角に">UNIFY</button>
+              <button class="mini-btn" id="chatBtn" title="チャットログの整形">CHAT</button>
+              <button class="mini-btn" id="undoBtn" title="元に戻す">UNDO</button>
+              <button class="mini-btn" id="redoBtn" title="やり直し">REDO</button>
+            </div>
+          </div>
+
+          <!-- 10 FIND / REPLACE -->
           <div class="compact-control">
             <div class="label-row">
-              <label>01 STATUS</label>
-              <div class="char-count" id="sidebarCharCount">CHARS: 0</div>
+              <label>10 FIND / REPLACE</label>
             </div>
-            <div
-              class="status sidebar-status-box"
-              id="statusBox"
-              title="SYSTEM READY (V2)"
-            >
-              SYSTEM READY (V2)
-            </div>
-          </div>
-
-          <!-- ─── SIDEBAR VIEW TABS SWITCHER ─── -->
-          <div class="sidebar-view-tabs">
-            <button 
-              type="button"
-              class="sidebar-view-tab-btn active"
-              id="viewBtnControls"
-              title="基本操作パネル（テーマ、フォント、行間、整形ツール等）"
-            >
-              CONTROLS
-            </button>
-            <button 
-              type="button"
-              class="sidebar-view-tab-btn"
-              id="viewBtnSaved"
-              title="保存タブ・使い回しタブ一覧"
-            >
-              SAVED TABS
-              <span class="sidebar-view-tab-badge" id="savedTabsCountBadge">0</span>
-            </button>
-          </div>
-
-          <!-- VIEW A: CONTROLS (基本操作パネル) -->
-          <div class="sidebar-view-content active" id="viewControls">
-            <!-- 02 THEME BANK -->
-            <div class="control">
-              <div class="label-row">
-                <label>02 THEME BANK</label>
+            <div class="sidebar-search-box">
+              <div class="sidebar-search-row">
+                <span class="sidebar-search-label">FIND</span>
+                <input class="tool-input" id="findInput" style="flex: 1;" type="text" placeholder="検索文字列を入力" />
               </div>
-              <div class="theme-buttons">
-                <button class="theme-btn" data-theme="navy" aria-pressed="false">Navy</button>
-                <button class="theme-btn" data-theme="light" aria-pressed="false">Light</button>
-                <button class="theme-btn" data-theme="black" aria-pressed="true">Black</button>
-                <button class="theme-btn" data-theme="gray" aria-pressed="false">Gray</button>
-                <button class="theme-btn" data-theme="red" aria-pressed="false">Red</button>
-                <button class="paper-btn" id="paperModeBtn" aria-pressed="false">Paper</button>
+              <div class="sidebar-search-row">
+                <span class="sidebar-search-label">REP</span>
+                <input class="tool-input" id="replaceInput" style="flex: 1;" type="text" placeholder="置換文字列を入力" />
               </div>
-            </div>
-
-            <!-- 03 SIZE & 04 WEIGHT -->
-            <div class="sidebar-grid-2">
-              <div class="control">
-                <div class="label-row">
-                  <label>03 SIZE</label>
-                  <span class="value" id="fontSizeValue">16px</span>
-                </div>
-                <input class="solid-slider" id="fontSize" type="range" min="8" max="100" step="1" value="16" />
-              </div>
-
-              <div class="control">
-                <div class="label-row">
-                  <label>04 WEIGHT</label>
-                  <span class="value" id="fontWeightValue">400</span>
-                </div>
-                <input class="solid-slider" id="fontWeight" type="range" min="100" max="900" step="100" value="400" />
-              </div>
-            </div>
-
-            <!-- 05 LEADING & 06 PAPER INK -->
-            <div class="sidebar-grid-2">
-              <div class="control">
-                <div class="label-row">
-                  <label>05 LEADING</label>
-                  <span class="value" id="lineHeightValue">1.6</span>
-                </div>
-                <input class="solid-slider" id="lineHeight" type="range" min="1" max="3" step="0.1" value="1.6" />
-              </div>
-
-              <div class="control" id="paperInkContainer" style="opacity: 0.45;">
-                <div class="label-row">
-                  <label>06 PAPER INK</label>
-                  <span class="value" id="paperInkValue">OFF</span>
-                </div>
-                <input 
-                  class="solid-slider" 
-                  id="paperInk"
-                  type="range" 
-                  min="1" 
-                  max="5" 
-                  step="1" 
-                  value="5" 
-                  title="PAPER MODE有効時に文字の濃淡を調整できます"
-                />
-              </div>
-            </div>
-
-            <!-- 07 FONT FAMILY -->
-            <div class="control">
-              <div class="label-row">
-                <label>07 FONT FAMILY</label>
-              </div>
-              <div class="custom-select-container" id="fontFamilySelect" style="position: relative; width: 100%; height: 24px;">
-                <div class="custom-select-trigger" style="border: 1px solid var(--border); background: var(--surface); color: var(--text); padding: 0 8px; font-family: var(--title-font); font-size: 11px; height: 100%; display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
-                  <span class="custom-select-value" id="fontFamilyDisplay">MEIRYO</span>
-                  <span style="font-size: 9px; opacity: 0.6;">▼</span>
-                </div>
-                <div class="custom-select-dropdown" id="fontFamilyDropdown" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--surface); border: 1px solid var(--border-strong); z-index: 1000; max-height: 180px; overflow-y: auto;">
-                  <div class="custom-select-option selected" data-value="Meiryo, sans-serif">MEIRYO</div>
-                  <div class="custom-select-option" data-value="'MS Gothic', monospace">MS GOTHIC</div>
-                  <div class="custom-select-option" data-value="system-ui, sans-serif">SYSTEM UI</div>
-                  <div class="custom-select-option" data-value="'Yu Gothic UI', sans-serif">YU GOTHIC UI</div>
-                  <div class="custom-select-option" data-value="'Consolas', monospace">CONSOLAS</div>
-                </div>
-              </div>
-              <select id="fontFamily" style="display: none;">
-                <option value="Meiryo, sans-serif">MEIRYO</option>
-                <option value="'MS Gothic', monospace">MS GOTHIC</option>
-                <option value="system-ui, sans-serif">SYSTEM UI</option>
-                <option value="'Yu Gothic UI', sans-serif">YU GOTHIC UI</option>
-                <option value="'Consolas', monospace">CONSOLAS</option>
-              </select>
-            </div>
-
-            <!-- 08 TRANSFORM ENGINE -->
-            <div class="control">
-              <div class="label-row">
-                <label>08 TRANSFORM ENGINE</label>
-              </div>
-              <div class="transform-buttons" style="grid-template-columns: repeat(5, 1fr);">
-                <button class="mini-btn" id="toggleCaseBtn" type="button" style="text-transform: none;" title="大文字/小文字切替">A/a</button>
-                <button class="mini-btn" id="toggleZenHanBtn" type="button" title="全角/半角切替">半/全</button>
-                <button class="mini-btn" id="toggleHiraKataBtn" type="button" title="ひらがな/カタカナ切替">あ/ア</button>
-                <button class="mini-btn" id="cleanBtn" type="button" title="空行集約とトリミング">CLN</button>
-                <button class="mini-btn" id="toggleVerticalBtn" type="button" title="縦組/横組切替">横/縦</button>
-                
-                <button class="mini-btn" id="alignLeftBtn" type="button" title="左寄せ">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="17" y1="10" x2="3" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="17" y1="18" x2="3" y2="18"></line></svg>
-                </button>
-                <button class="mini-btn" id="alignCenterBtn" type="button" title="中央寄せ">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="10" x2="6" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="18" y1="18" x2="6" y2="18"></line></svg>
-                </button>
-                <button class="mini-btn" id="alignRightBtn" type="button" title="右寄せ">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="10" x2="7" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="21" y1="18" x2="7" y2="18"></line></svg>
-                </button>
-                <button class="mini-btn" id="toggleHtmlModeBtn" type="button" title="HTMLペーストモード切替">HTML</button>
-                <button class="mini-btn" id="togglePreviewBtn" type="button" title="Markdownプレビュー切替">MD</button>
-              </div>
-            </div>
-
-            <!-- 09 LINE TOOLS -->
-            <div class="control">
-              <div class="label-row">
-                <label>09 LINE TOOLS</label>
-              </div>
-              <div class="transform-buttons" style="grid-template-columns: repeat(4, 1fr);">
-                <button class="mini-btn" id="unifyBtn" title="全角スペースを半角に">UNIFY</button>
-                <button class="mini-btn" id="chatBtn" title="チャットログの整形">CHAT</button>
-                <button class="mini-btn" id="undoBtn" title="元に戻す">UNDO</button>
-                <button class="mini-btn" id="redoBtn" title="やり直し">REDO</button>
-              </div>
-            </div>
-
-            <!-- 10 FIND / REPLACE -->
-            <div class="compact-control">
-              <div class="label-row">
-                <label>10 FIND / REPLACE</label>
-              </div>
-              <div class="sidebar-search-box">
-                <div class="sidebar-search-row">
-                  <span class="sidebar-search-label">FIND</span>
-                  <input class="tool-input" id="findInput" style="flex: 1;" type="text" placeholder="検索文字列を入力" />
-                </div>
-                <div class="sidebar-search-row">
-                  <span class="sidebar-search-label">REP</span>
-                  <input class="tool-input" id="replaceInput" style="flex: 1;" type="text" placeholder="置換文字列を入力" />
-                </div>
-                <div class="sidebar-search-actions">
-                  <button class="mini-btn" id="findNextBtn" type="button" title="次を検索">NEXT</button>
-                  <button class="mini-btn" id="replaceOneBtn" type="button" title="現在位置を置換">REPLACE</button>
-                  <button class="mini-btn" id="replaceAllBtn" type="button" title="すべての該当箇所を一括置換">REP ALL</button>
-                  <button class="mini-btn all-clear-btn" id="allClearBtn" type="button" title="検索・置換窓の入力をすべてクリア">ALL CLEAR</button>
-                </div>
+              <div class="sidebar-search-actions">
+                <button class="mini-btn" id="findNextBtn" type="button" title="次を検索">NEXT</button>
+                <button class="mini-btn" id="replaceOneBtn" type="button" title="現在位置を置換">REPLACE</button>
+                <button class="mini-btn" id="replaceAllBtn" type="button" title="すべての該当箇所を一括置換">REP ALL</button>
+                <button class="mini-btn all-clear-btn" id="allClearBtn" type="button" title="検索・置換窓の入力をすべてクリア">ALL CLEAR</button>
               </div>
             </div>
           </div>
+        </div>
 
-          <!-- VIEW B: SAVED TABS (保存タブ・使い回し専用ビュー) -->
-          <div class="sidebar-view-content" id="viewSavedTabs" style="display: none;">
-            <div class="saved-tabs-view-container">
-              <div class="saved-tabs-topbar">
-                <button
-                  class="mini-btn"
-                  id="saveActiveTabBankBtn"
-                  type="button"
-                  style="flex: 1; height: 26px; font-weight: 700;"
-                  title="現在編集中のタブを保存タブエリアに追加（冒頭テキストが初期名になります）"
-                >
-                  + SAVE CURRENT TAB
-                </button>
-                <button
-                  class="mini-btn delete-btn"
-                  id="clearAllSavedTabsBtn"
-                  type="button"
-                  style="height: 26px; padding: 0 8px; color: var(--muted);"
-                  title="保存タブを全クリア（確認ダイアログあり）"
-                >
-                  CLEAR ALL
-                </button>
-              </div>
+        <!-- VIEW B: SAVED TABS (保存タブ・使い回し専用ビュー - Exact App.tsx Layout) -->
+        <div class="sidebar-view-content" id="viewSavedTabs" style="display: none;">
+          <div class="saved-tabs-view-container">
+            <div class="saved-tabs-topbar">
+              <button
+                class="mini-btn"
+                id="saveActiveTabBankBtn"
+                type="button"
+                style="flex: 1; height: 26px; font-weight: 700;"
+                title="現在編集中のタブを保存タブエリアに追加（冒頭テキストが初期名になります）"
+              >
+                + SAVE CURRENT TAB
+              </button>
+              <button
+                class="mini-btn delete-btn"
+                id="clearAllSavedTabsBtn"
+                type="button"
+                style="height: 26px; padding: 0 8px; color: var(--muted);"
+                title="保存タブを全クリア（確認ダイアログあり）"
+              >
+                CLEAR ALL
+              </button>
+            </div>
 
-              <!-- エクスポート・インポート操作列 -->
-              <div class="saved-tabs-io-bar">
-                <button
-                  type="button"
-                  class="mini-btn"
-                  id="exportSavedTabsBtn"
-                  style="flex: 1; height: 24px; font-size: 10px;"
-                  title="保存タブをすべてJSONファイルとしてバックアップ保存（ダウンロード）"
-                >
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="7 10 12 15 17 10"></polyline>
-                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                  </svg>
-                  EXPORT ALL
-                </button>
-                <button
-                  type="button"
-                  class="mini-btn"
-                  id="importSavedTabsBtn"
-                  style="flex: 1; height: 24px; font-size: 10px;"
-                  title="バックアップしたJSONファイルから保存タブを読み込み復元（インポート）"
-                >
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="17 8 12 3 7 8"></polyline>
-                    <line x1="12" y1="3" x2="12" y2="15"></line>
-                  </svg>
-                  IMPORT TABS
-                </button>
-                <input
-                  id="savedTabsFileInput"
-                  type="file"
-                  accept=".json,application/json"
-                  style="display: none;"
-                />
-              </div>
+            <!-- エクスポート・インポート操作列 -->
+            <div class="saved-tabs-io-bar">
+              <button
+                type="button"
+                class="mini-btn"
+                id="exportSavedTabsBtn"
+                style="flex: 1; height: 24px; font-size: 10px;"
+                title="保存タブをすべてJSONファイルとしてバックアップ保存（ダウンロード）"
+              >
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px; display: inline-block; vertical-align: middle;">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                EXPORT ALL
+              </button>
+              <button
+                type="button"
+                class="mini-btn"
+                id="importSavedTabsBtn"
+                style="flex: 1; height: 24px; font-size: 10px;"
+                title="バックアップしたJSONファイルから保存タブを読み込み復元（インポート）"
+              >
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px; display: inline-block; vertical-align: middle;">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                IMPORT TABS
+              </button>
+              <input
+                id="savedTabsFileInput"
+                type="file"
+                accept=".json,application/json"
+                style="display: none;"
+              />
+            </div>
 
-              <div class="saved-tabs-list" id="savedTabsList">
-                <!-- 動的描画されます -->
-              </div>
+            <div class="saved-tabs-list" id="savedTabsList">
+              <!-- 動的描画されます -->
             </div>
           </div>
         </div>
@@ -2314,8 +2317,9 @@ const miniInkBtn = document.getElementById("miniInkBtn");
 const sidebarResizer = document.getElementById("sidebarResizer");
 const sidebarPanel = document.getElementById("sidebarPanel");
 const toggleSidebarPosBtn = document.getElementById("toggleSidebarPosBtn");
+const posBtnText = document.getElementById("posBtnText");
 const toggleFullscreenBtn = document.getElementById("toggleFullscreenBtn");
-const fullscreenIcon = document.getElementById("fullscreenIcon");
+const fullscreenIconContainer = document.getElementById("fullscreenIconContainer");
 
 const viewBtnControls = document.getElementById("viewBtnControls");
 const viewBtnSaved = document.getElementById("viewBtnSaved");
@@ -2332,7 +2336,7 @@ const clearAllSavedTabsBtn = document.getElementById("clearAllSavedTabsBtn");
 // Controls DOM
 const themeBtns = document.querySelectorAll(".theme-btn");
 const paperModeBtn = document.getElementById("paperModeBtn");
-const paperInkControl = document.getElementById("paperInkControl");
+const paperInkContainer = document.getElementById("paperInkContainer");
 const paperInk = document.getElementById("paperInk");
 const paperInkValue = document.getElementById("paperInkValue");
 
@@ -2479,8 +2483,8 @@ function applyTheme(name) {
     paperInkValue.textContent = paperModeEnabled ? info.label : "OFF";
   }
 
-  if (paperInkControl) {
-    paperInkControl.style.opacity = paperModeEnabled ? "1" : "0.45";
+  if (paperInkContainer) {
+    paperInkContainer.style.opacity = paperModeEnabled ? "1" : "0.45";
   }
 
   saveState();
@@ -2502,6 +2506,9 @@ function applySidebarPosition(pos) {
   sidebarPosition = pos;
   app.classList.remove("sidebar-left", "sidebar-right");
   app.classList.add("sidebar-" + pos);
+  if (posBtnText) {
+    posBtnText.textContent = (pos === "right") ? "LEFT ⇄" : "⇄ RIGHT";
+  }
   saveState();
 }
 
@@ -2674,11 +2681,20 @@ document.addEventListener("mouseup", () => {
 });
 
 /* ==========================================================================
-   Fullscreen Support
+   Fullscreen Support (Exact App.tsx SVG icons)
    ========================================================================== */
 function updateFullscreenIcon() {
   const isFull = !!(document.fullscreenElement || document.webkitFullscreenElement);
-  fullscreenIcon.textContent = isFull ? "][" : "[  ]";
+  toggleFullscreenBtn.classList.toggle("active", isFull);
+  if (fullscreenIconContainer) {
+    if (isFull) {
+      // Inner brackets (Exit fullscreen)
+      fullscreenIconContainer.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block;"><path d="M4 14h6v6m10-6h-6v6M4 10h6V4m10 6h-6V4" /></svg>';
+    } else {
+      // Outer brackets (Enter fullscreen)
+      fullscreenIconContainer.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block;"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" /></svg>';
+    }
+  }
 }
 
 toggleFullscreenBtn.addEventListener("click", () => {
@@ -2970,7 +2986,7 @@ function handleTabDragEnd() {
 }
 
 /* ==========================================================================
-   SAVED TABS (Tab Bank) Management
+   SAVED TABS (Tab Bank) Management (Exact App.tsx DOM Structure L1870-1936)
    ========================================================================== */
 function saveActiveTabToBank() {
   const cur = tabs.find(t => t.id === activeTabId);
@@ -3097,6 +3113,9 @@ function renderSavedTabs() {
     const isEditing = editingSavedTabId === saved.id;
 
     if (isEditing) {
+      const titleGroup = document.createElement("div");
+      titleGroup.className = "saved-tab-title-group";
+      
       const input = document.createElement("input");
       input.type = "text";
       input.className = "saved-tab-edit-input";
@@ -3119,70 +3138,75 @@ function renderSavedTabs() {
         saveSavedTabsState();
         renderSavedTabs();
       });
-      header.appendChild(input);
+      titleGroup.appendChild(input);
+      header.appendChild(titleGroup);
       setTimeout(() => input.focus(), 0);
     } else {
+      const titleGroup = document.createElement("div");
+      titleGroup.className = "saved-tab-title-group";
+
       const title = document.createElement("span");
       title.className = "saved-tab-title";
       title.textContent = saved.label;
-      title.title = "ダブルクリックまたは ✎ で名前変更";
-      title.addEventListener("dblclick", () => {
+      title.title = "クリックしてタイトル名を編集";
+      title.addEventListener("click", () => {
         editingSavedTabId = saved.id;
         editingSavedLabel = saved.label;
         renderSavedTabs();
       });
-      header.appendChild(title);
+
+      const editBtn = document.createElement("button");
+      editBtn.type = "button";
+      editBtn.className = "saved-tab-title-edit-btn";
+      editBtn.textContent = "✎";
+      editBtn.title = "名前を編集";
+      editBtn.addEventListener("click", () => {
+        editingSavedTabId = saved.id;
+        editingSavedLabel = saved.label;
+        renderSavedTabs();
+      });
+
+      titleGroup.appendChild(title);
+      titleGroup.appendChild(editBtn);
+      header.appendChild(titleGroup);
     }
 
-    const dateSpan = document.createElement("span");
-    dateSpan.className = "saved-tab-date";
-    const d = new Date(saved.savedAt);
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    const hh = String(d.getHours()).padStart(2, "0");
-    const mm = String(d.getMinutes()).padStart(2, "0");
-    dateSpan.textContent = y + "/" + m + "/" + day + " " + hh + ":" + mm;
-    header.appendChild(dateSpan);
+    const metaSpan = document.createElement("span");
+    metaSpan.className = "saved-tab-meta";
+    metaSpan.textContent = (saved.text || "").length + " 文字";
+    header.appendChild(metaSpan);
 
     const preview = document.createElement("div");
-    preview.className = "saved-tab-preview";
-    const previewText = (saved.text || "").slice(0, 140).trim();
+    preview.className = "saved-tab-preview-text";
+    preview.style.cursor = "pointer";
+    preview.title = (saved.text || "").slice(0, 160);
+    const previewText = (saved.text || "").trim();
     preview.textContent = previewText || "(空のタブ)";
+    preview.addEventListener("click", () => openSavedTab(saved));
 
     const actions = document.createElement("div");
     actions.className = "saved-tab-actions";
 
+    const dateSpan = document.createElement("span");
+    dateSpan.style.cssText = "font-size: 9px; color: var(--muted); margin-right: auto; font-family: var(--title-font);";
+    dateSpan.textContent = new Date(saved.savedAt).toLocaleDateString();
+
     const openBtnEl = document.createElement("button");
-    openBtnEl.className = "mini-btn";
-    openBtnEl.style.height = "22px";
-    openBtnEl.style.fontSize = "10px";
+    openBtnEl.className = "saved-tab-btn";
+    openBtnEl.type = "button";
     openBtnEl.textContent = "OPEN";
-    openBtnEl.title = "エディタに新規タブとして復元";
+    openBtnEl.title = "エディタに新規タブとして開く";
     openBtnEl.addEventListener("click", () => openSavedTab(saved));
 
-    const editBtnEl = document.createElement("button");
-    editBtnEl.className = "mini-btn";
-    editBtnEl.style.height = "22px";
-    editBtnEl.style.fontSize = "10px";
-    editBtnEl.textContent = "✎";
-    editBtnEl.title = "名前を変更";
-    editBtnEl.addEventListener("click", () => {
-      editingSavedTabId = saved.id;
-      editingSavedLabel = saved.label;
-      renderSavedTabs();
-    });
-
     const delBtnEl = document.createElement("button");
-    delBtnEl.className = "mini-btn delete-btn";
-    delBtnEl.style.height = "22px";
-    delBtnEl.style.fontSize = "10px";
-    delBtnEl.textContent = "DELETE";
-    delBtnEl.title = "この保存タブを削除";
+    delBtnEl.className = "saved-tab-btn delete-btn";
+    delBtnEl.type = "button";
+    delBtnEl.title = "このタブを削除";
+    delBtnEl.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg> DELETE`;
     delBtnEl.addEventListener("click", () => removeSavedTab(saved.id));
 
+    actions.appendChild(dateSpan);
     actions.appendChild(openBtnEl);
-    actions.appendChild(editBtnEl);
     actions.appendChild(delBtnEl);
 
     card.appendChild(header);
@@ -3658,6 +3682,7 @@ function loadState() {
   applyPreviewMode(isPreviewMode);
   applyHtmlMode(isHtmlMode);
   applyFocusMode(isMinimumMode);
+  updateFullscreenIcon();
 
   const activeTab = tabs.find(t => t.id === activeTabId) || tabs[0];
   activeTabId = activeTab.id;
