@@ -1,10 +1,10 @@
-const CACHE_NAME = "solid-square-editor-cache-v61";
+const CACHE_NAME = "solid-square-editor-cache-v62";
 const ASSETS = [
   "./",
   "./index.html",
   "./manifest.json",
   "./icon.svg",
-  "./assets/index-BjVMsFFW.js",
+  "./assets/index-Bd_nza74.js",
   "./assets/index-CNoAV7gx.css"
 ];
 
