@@ -1,11 +1,11 @@
-const CACHE_NAME = "solid-square-editor-cache-v62";
+const CACHE_NAME = "solid-square-editor-cache-v63";
 const ASSETS = [
   "./",
   "./index.html",
   "./manifest.json",
   "./icon.svg",
-  "./assets/index-Bd_nza74.js",
-  "./assets/index-CNoAV7gx.css"
+  "./assets/index-CdCP0J3J.js",
+  "./assets/index-DomDpQj1.css"
 ];
 
 self.addEventListener("install", (event) => {
